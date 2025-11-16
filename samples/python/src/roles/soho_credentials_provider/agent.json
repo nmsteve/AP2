@@ -1,0 +1,143 @@
+{
+    "name": "SOHO Credentials Provider",
+    "description": "Manages SOHO Credit authentication, BNPL plans, and user payment credentials",
+    "version": "1.0.0",
+    "url": "http://localhost:8005/a2a/soho_credentials_provider",
+    "defaultInputModes": ["text"],
+    "defaultOutputModes": ["text"],
+    "capabilities": {
+        "extensions": [
+            {
+                "uri": "https://github.com/google-agentic-commerce/ap2/v1",
+                "description": "Supports the Agent Payments Protocol.",
+                "required": true
+            }
+        ]
+    },
+    "skills": [
+        {
+            "id": "get_shipping_address",
+            "name": "Get Shipping Address",
+            "description": "Retrieves the user's default shipping address from SOHO",
+            "tags": ["shipping", "address"],
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_email": {
+                        "type": "string",
+                        "description": "The user's email address"
+                    }
+                },
+                "required": ["user_email"]
+            }
+        },
+        {
+            "id": "get_credit_status",
+            "name": "Get Credit Status",
+            "description": "Returns the user's SOHO Credit status including available credit, limits, and outstanding debt",
+            "tags": ["credit", "soho"],
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_email": {
+                        "type": "string",
+                        "description": "The user's email address"
+                    }
+                },
+                "required": ["user_email"]
+            }
+        },
+        {
+            "id": "get_bnpl_quote",
+            "name": "Get BNPL Quote",
+            "description": "Returns BNPL (Buy Now Pay Later) payment plan options for a given amount",
+            "tags": ["bnpl", "payment", "soho"],
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_email": {
+                        "type": "string",
+                        "description": "The user's email address"
+                    },
+                    "amount": {
+                        "type": "number",
+                        "description": "The transaction amount"
+                    },
+                    "merchant_id": {
+                        "type": "string",
+                        "description": "The merchant's ID"
+                    }
+                },
+                "required": ["user_email", "amount"]
+            }
+        },
+        {
+            "id": "request_biometric_approval",
+            "name": "Request Biometric Approval",
+            "description": "Requests biometric approval (Face ID/Touch ID) via SOHO mobile app",
+            "tags": ["authentication", "biometric", "soho"],
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_email": {
+                        "type": "string",
+                        "description": "The user's email address"
+                    },
+                    "amount": {
+                        "type": "number",
+                        "description": "The transaction amount"
+                    },
+                    "merchant": {
+                        "type": "string",
+                        "description": "The merchant name"
+                    },
+                    "payment_plan": {
+                        "type": "object",
+                        "description": "The selected payment plan details"
+                    }
+                },
+                "required": ["user_email", "amount", "merchant", "payment_plan"]
+            }
+        },
+        {
+            "id": "search_payment_methods",
+            "name": "Search Payment Methods",
+            "description": "Returns SOHO Credit payment methods that match merchant's accepted payment methods",
+            "tags": ["payment", "methods", "soho"],
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_email": {
+                        "type": "string",
+                        "description": "The user's email address"
+                    },
+                    "payment_method_data": {
+                        "type": "array",
+                        "description": "Merchant's accepted payment methods"
+                    }
+                },
+                "required": ["user_email", "payment_method_data"]
+            }
+        },
+        {
+            "id": "create_payment_credential_token",
+            "name": "Create Payment Credential Token",
+            "description": "Creates a payment credential token for the selected SOHO Credit payment method",
+            "tags": ["payment", "credentials", "soho"],
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_email": {
+                        "type": "string",
+                        "description": "The user's email address"
+                    },
+                    "payment_method_alias": {
+                        "type": "string",
+                        "description": "The selected payment method alias"
+                    }
+                },
+                "required": ["user_email", "payment_method_alias"]
+            }
+        }
+    ]
+}

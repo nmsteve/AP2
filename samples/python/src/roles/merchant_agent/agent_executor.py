@@ -48,6 +48,7 @@ from common.system_utils import DEBUG_MODE_INSTRUCTIONS
 # work with.
 _KNOWN_SHOPPING_AGENTS = [
     "trusted_shopping_agent",
+    "soho_shopping_agent",
 ]
 
 class MerchantAgentExecutor(BaseServerExecutor):
