@@ -145,8 +145,7 @@ GOOGLE_API_KEY=your_api_key_here
 ### 3. Run the Example
 
 ```bash
-cd scenarios/a2a/human-present/soho
-./run.sh
+scenarios/a2a/human-present/soho-ap2/run.sh
 ```
 
 This will:
