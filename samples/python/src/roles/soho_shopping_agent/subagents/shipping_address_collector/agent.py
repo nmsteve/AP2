@@ -31,7 +31,7 @@ from common.retrying_llm_agent import RetryingLlmAgent
 from common.system_utils import DEBUG_MODE_INSTRUCTIONS
 
 shipping_address_collector = RetryingLlmAgent(
-    model="gemini-2.5-flash",
+    model="gemine-3-pro-preview",
     name="shipping_address_collector",
     max_retries=0,
     instruction="""

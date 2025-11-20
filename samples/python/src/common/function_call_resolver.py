@@ -81,7 +81,7 @@ class FunctionCallResolver:
     """
 
     response = self._client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemine-3-pro-preview",
         contents=prompt,
         config=self._config,
     )

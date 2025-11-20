@@ -19,7 +19,7 @@ The shopping agent's role is to engage with a user to:
 2. Help complete the purchase of their chosen items.
 
 The Google ADK powers this shopping agent, chosen for its simplicity and
-efficiency in developing robust LLM agents. 
+efficiency in developing robust LLM agents.
 """
 
 from . import tools
@@ -32,7 +32,7 @@ from common.system_utils import DEBUG_MODE_INSTRUCTIONS
 
 root_agent = RetryingLlmAgent(
     max_retries=5,
-    model="gemini-2.5-flash",
+    model="gemine-3-pro-preview",
     name="root_agent",
     instruction="""
           You are a shopping agent responsible for helping users find and
