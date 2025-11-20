@@ -80,11 +80,7 @@ root_agent = RetryingLlmAgent(
           7. Once the user selects a plan, call the `select_payment_plan` tool
              with the plan_id. Store the selected plan details.
 
-          8. Delegate to the `payment_method_collector` agent to get the
-             payment credential token. The agent will return a token for
-             SOHO Credit.
-
-          9. Display to the user:
+          8. Display to the user:
              "⚠️ APPROVAL REQUIRED
 
              You will receive a push notification on your SOHO mobile app.
@@ -95,18 +91,18 @@ root_agent = RetryingLlmAgent(
 
              Waiting for your approval..."
 
-          10. Call the `request_biometric_approval` tool. This simulates sending
+          9. Call the `request_biometric_approval` tool. This simulates sending
               a push notification to the user's SOHO mobile app. In production,
               the user would see the purchase details and authenticate with
               Face ID or Touch ID on their device.
 
-          11. Once biometric approval is received, inform the user:
+          10. Once biometric approval is received, inform the user:
               "✅ Biometric approval received from your SOHO mobile app"
 
-          12. Call the `create_soho_payment_mandate` tool to create a payment
+          11. Call the `create_soho_payment_mandate` tool to create a payment
               mandate with SOHO Credit details including the selected BNPL plan.
 
-          13. Present the final purchase summary to the user:
+          12. Present the final purchase summary to the user:
               - Product details with price breakdown (subtotal, shipping, tax, total)
               - Selected BNPL payment plan details
               - Shipping address
@@ -116,13 +112,13 @@ root_agent = RetryingLlmAgent(
 
               Ask: "Confirm purchase with SOHO Credit?"
 
-          14. When the user confirms, call the following tools in order:
+          13. When the user confirms, call the following tools in order:
               a. `attach_biometric_attestation` - Attaches the biometric
                  signature to the payment mandate
               b. `initiate_payment` - Sends the payment mandate to the merchant
                  who forwards it to SOHO for on-chain settlement
 
-          15. After successful payment, create a receipt showing:
+          14. After successful payment, create a receipt showing:
               "🎉 Purchase Complete!
 
               ✅ Order Confirmed: [Order Number]

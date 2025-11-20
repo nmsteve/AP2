@@ -72,7 +72,8 @@ async def get_bnpl_options(
   )
 
   task = await soho_credentials_provider_client.send_a2a_message(message)
-  bnpl_quote = artifact_utils.find_data_part("bnpl_quote", task.artifacts)
+  data = artifact_utils.get_first_data_part(task.artifacts)
+  bnpl_quote = data.get("bnpl_quote")
 
   tool_context.state["bnpl_quote"] = bnpl_quote
   return bnpl_quote
@@ -147,7 +148,8 @@ async def request_biometric_approval(
   )
 
   task = await soho_credentials_provider_client.send_a2a_message(message)
-  biometric_approval = artifact_utils.find_data_part("biometric_approval", task.artifacts)
+  data = artifact_utils.get_first_data_part(task.artifacts)
+  biometric_approval = data.get("biometric_approval")
 
   tool_context.state["biometric_approval"] = biometric_approval
   return biometric_approval

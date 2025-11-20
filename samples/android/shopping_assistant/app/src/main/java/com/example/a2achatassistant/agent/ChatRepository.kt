@@ -122,7 +122,7 @@ class ChatRepository(private val context: Context) {
           )
       )
     GenerativeModel(
-      modelName = "gemine-3-pro-preview",
+      modelName = "gemini-3-pro-preview",
       apiKey = BuildConfig.GEMINI_API_KEY,
       systemInstruction = Content("system", listOf(TextPart(rootAgentInstruction))),
       tools = listOf(tools),

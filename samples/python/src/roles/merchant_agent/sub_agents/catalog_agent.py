@@ -67,7 +67,7 @@ async def find_items_workflow(
         """ % DEBUG_MODE_INSTRUCTIONS
 
   llm_response = llm_client.models.generate_content(
-      model="gemine-3-pro-preview",
+      model="gemini-3-pro-preview",
       contents=prompt,
       config={
           "response_mime_type": "application/json",

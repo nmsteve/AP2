@@ -10,6 +10,25 @@ This implementation showcases a complete shopping flow using:
 - **Biometric Authentication**: Simulated Face ID/Touch ID approval via SOHO mobile app
 - **Blockchain Settlement**: On-chain credit transactions via Creditor.sol on Base
 
+## SOHO Credit (AP2) Shopping Flow - Implementation Status
+
+1. User Prompt - DONE
+2. Sign Intent Mandate - DONE
+3. Find Products - DONE
+4. Sign Cart Mandate - DONE
+5. Get Credentials Provider: SOHO Credit - DONE
+6. Get Shipping Address - DONE
+7. Update Cart Mandate - DONE
+8. Get BNPL Options - DONE
+9. Select BNPL Plan - DONE
+10. Request Biometric Approval - DONE
+11. Create Payment Credential Token - NOT YET DONE
+12. Sign Payment Mandate - NOT YET DONE
+
+Complete Purchase - NOT YET DONE
+
+
+
 ## Key Features
 
 ### 1. **BNPL Payment Plans**
