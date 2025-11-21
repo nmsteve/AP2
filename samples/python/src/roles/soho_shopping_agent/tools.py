@@ -20,6 +20,7 @@ and biometric approval workflow.
 
 from datetime import datetime
 from datetime import timezone
+import json
 import uuid
 
 from a2a.types import Artifact
@@ -370,7 +371,8 @@ def attach_biometric_attestation(tool_context: ToolContext) -> str:
   )
 
   # Attach the biometric attestation from SOHO mobile app
-  payment_mandate.user_authorization = biometric_approval["attestation"]
+  # Convert the attestation dict to a JSON string as PaymentMandate.user_authorization expects a string
+  payment_mandate.user_authorization = json.dumps(biometric_approval["attestation"])
 
   tool_context.state["signed_payment_mandate"] = payment_mandate
   return str(payment_mandate.user_authorization)
