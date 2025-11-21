@@ -15,6 +15,7 @@
 """Tools for the SOHO Credentials Provider Agent."""
 
 from typing import Any
+import logging
 from datetime import datetime, timedelta
 
 from a2a.server.tasks.task_updater import TaskUpdater
@@ -30,6 +31,8 @@ from ap2.types.payment_request import PaymentMethodData
 from common import message_utils
 
 from . import account_manager
+
+logger = logging.getLogger(__name__)
 
 
 async def handle_get_shipping_address(
@@ -349,6 +352,14 @@ async def handle_create_payment_credential_token(
           "plan_id": payment_method["plan_id"]
       }
   }
+
+  # Log the created token for debugging on the credentials provider side.
+  # This helps trace the token value produced by `account_manager.create_token`.
+  try:
+    logger.info("Created payment credential token for user %s: %s", user_email, token_value)
+  except Exception:
+    # Ensure logging can't break the task flow.
+    pass
 
   await updater.add_artifact([Part(root=DataPart(data=token))])
   await updater.complete()

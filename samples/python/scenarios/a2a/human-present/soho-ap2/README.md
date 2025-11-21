@@ -22,10 +22,9 @@ This implementation showcases a complete shopping flow using:
 8. Get BNPL Options - DONE
 9. Select BNPL Plan - DONE
 10. Request Biometric Approval - DONE
-11. Create Payment Credential Token - NOT YET DONE
-12. Sign Payment Mandate - NOT YET DONE
-
-Complete Purchase - NOT YET DONE
+11. Create Payment Credential Token - DONE
+12. Sign Payment Mandate - DONE
+13. Complete Purchase - NOT YET DONE
 
 
 

@@ -99,10 +99,15 @@ root_agent = RetryingLlmAgent(
           10. Once biometric approval is received, inform the user:
               "✅ Biometric approval received from your SOHO mobile app"
 
-          11. Call the `create_soho_payment_mandate` tool to create a payment
+          11. Call `create_payment_credential_token` to create a payment
+              credential token for SOHO Credit using the user's email and
+              payment method alias.
+              "✅ Payment credential token created."
+
+          12. Call the `create_soho_payment_mandate` tool to create a payment
               mandate with SOHO Credit details including the selected BNPL plan.
 
-          12. Present the final purchase summary to the user:
+          13. Present the final purchase summary to the user:
               - Product details with price breakdown (subtotal, shipping, tax, total)
               - Selected BNPL payment plan details
               - Shipping address
@@ -112,13 +117,13 @@ root_agent = RetryingLlmAgent(
 
               Ask: "Confirm purchase with SOHO Credit?"
 
-          13. When the user confirms, call the following tools in order:
+          14. When the user confirms, call the following tools in order:
               a. `attach_biometric_attestation` - Attaches the biometric
                  signature to the payment mandate
               b. `initiate_payment` - Sends the payment mandate to the merchant
                  who forwards it to SOHO for on-chain settlement
 
-          14. After successful payment, create a receipt showing:
+          15. After successful payment, create a receipt showing:
               "🎉 Purchase Complete!
 
               ✅ Order Confirmed: [Order Number]
@@ -165,6 +170,7 @@ root_agent = RetryingLlmAgent(
         tools.select_payment_plan,
         tools.request_biometric_approval,
         tools.update_cart,
+        tools.create_payment_credential_token,
         tools.create_soho_payment_mandate,
         tools.attach_biometric_attestation,
         tools.initiate_payment,

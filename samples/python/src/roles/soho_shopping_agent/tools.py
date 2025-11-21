@@ -38,6 +38,7 @@ from ap2.types.payment_receipt import PaymentReceipt
 from ap2.types.payment_request import PaymentResponse
 from common import artifact_utils
 from common.a2a_message_builder import A2aMessageBuilder
+import logging
 
 
 async def get_bnpl_options(
@@ -153,6 +154,106 @@ async def request_biometric_approval(
 
   tool_context.state["biometric_approval"] = biometric_approval
   return biometric_approval
+
+
+async def create_payment_credential_token(
+  user_email: str,
+  payment_method_alias: str,
+  tool_context: ToolContext,
+) -> dict:
+  """Requests a payment credential token from the SOHO credentials provider.
+
+  This stores the returned token in `tool_context.state["payment_credential_token"]`.
+
+  Args:
+    user_email: The user's email address.
+    payment_method_alias: The payment method alias to tokenize.
+    tool_context: The ADK supplied tool context.
+
+  Returns:
+    A dict with status and token value.
+  """
+  message = (
+    A2aMessageBuilder()
+    .set_context_id(tool_context.state["shopping_context_id"])
+    .add_text("Create a payment credential token for the user's payment method.")
+    .add_data("user_email", user_email)
+    .add_data("payment_method_alias", payment_method_alias)
+    .build()
+  )
+
+  task = await soho_credentials_provider_client.send_a2a_message(message)
+  data = artifact_utils.get_first_data_part(task.artifacts)
+  # The credentials provider may return different shapes depending on the
+  # provider implementation. Normalize both cases:
+  # - legacy provider: {"token": "..."}
+  # - soho provider: {"payment_credential_token": {"type":..., "value":...}}
+  credentials_provider_agent_card = await soho_credentials_provider_client.get_agent_card()
+
+  token_value = None
+  if isinstance(data, dict):
+    if "token" in data:
+      token_value = data.get("token")
+    elif "payment_credential_token" in data:
+      pct = data.get("payment_credential_token")
+      # token may be nested under different keys; try common patterns
+      if isinstance(pct, dict):
+        token_value = pct.get("value") or pct.get("token")
+      else:
+        token_value = pct
+
+  # Try a recursive search for token-like values if not found yet
+  def _find_token(obj):
+    if obj is None:
+      return None
+    if isinstance(obj, str):
+      # Heuristic: treat any long hex-like or prefixed string as token
+      if len(obj) > 8:
+        return obj
+      return None
+    if isinstance(obj, dict):
+      for k, v in obj.items():
+        if k in ("token", "value", "payment_credential_token") and isinstance(v, (str, dict)):
+          if isinstance(v, str):
+            return v
+          if isinstance(v, dict):
+            # prefer `value` or `token` inside
+            return v.get("value") or v.get("token") or _find_token(v)
+      for v in obj.values():
+        found = _find_token(v)
+        if found:
+          return found
+    if isinstance(obj, list):
+      for item in obj:
+        found = _find_token(item)
+        if found:
+          return found
+    return None
+
+  if not token_value:
+    token_value = _find_token(data)
+
+  # Store raw response for debugging even if token_value is missing
+  tool_context.state["payment_credential_token"] = {
+      "value": token_value,
+      "raw": data,
+      "provider_url": getattr(credentials_provider_agent_card, "url", None),
+  }
+
+  if not token_value:
+    # Return an error status instead of raising to allow the caller to
+    # handle the failure and inspect `tool_context.state["payment_credential_token"]`.
+    return {"status": "error", "reason": "no_token_returned", "raw": data}
+
+  return {"status": "success", "token": token_value}
+
+  tool_context.state["payment_credential_token"] = {
+    "value": token_value,
+    "raw": data,
+    "provider_url": getattr(credentials_provider_agent_card, "url", None),
+  }
+  logging.info(f"Created payment credential token: {token_value}")
+  return {"status": "success", "token": token_value}
 
 
 async def update_cart(
