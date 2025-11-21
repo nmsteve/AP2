@@ -40,17 +40,26 @@ shopper = RetryingLlmAgent(
 
     When asked to complete a task, follow these instructions:
     1. Find out what the user is interested in purchasing.
-    2. Ask clarifying questions one at a time to understand their needs fully.
-      The shopping agent delegates responsibility for helping the user shop for
-      products to this subagent. Help the user craft an IntentMandate that will
-      be used to find relevant products for their purchase. Reason about the
-      user's instructions and the information needed for the IntentMandate. The
-      IntentMandate will be shown back to the user for confirmation so it's okay
-      to make reasonable assumptions about the IntentMandate criteria initially.
-      For example, inquire about:
-        - A detailed description of the item.
-        - Any preferred merchants or specific SKUs.
-        - Whether the item needs to be refundable.
+    2. IMPORTANT: Proceed immediately with what the user asks for. Do NOT ask
+       clarifying questions unless the request is completely meaningless.
+
+      Examples - proceed directly, NO questions:
+      - "book" → search for "any book"
+      - "shoes" → search for "any shoes"
+      - "laptop" → search for "any laptop"
+      - "notebook A4 200 pages" → search exactly as stated
+      - "running shoes" → search for "running shoes"
+
+      Only ask if impossible to proceed:
+      - "buy something" → ask "What would you like to buy?"
+      - "get stuff" → ask "What are you looking for?"
+
+      The merchant will return multiple product options. The user can choose
+      from those options based on specifics like size, color, brand, etc.
+
+      Do NOT ask about: type, size, color, brand, merchant, refundable.
+      Just proceed and let the merchant show options.
+
     3. After you have gathered what you believe is sufficient information,
       use the 'create_intent_mandate' tool with the collected information
       (user's description, and any other details they provided). Do not include
