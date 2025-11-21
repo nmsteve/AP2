@@ -113,7 +113,7 @@ $UV_RUN_CMD --package ap2-samples python -m roles.credentials_provider_agent >"$
 pids+=($!)
 
 echo "-> Starting the Card Processor Agent (port:8003 log:$LOG_DIR/mpp_agent.log)..."
-$UV_RUN_CMD --package ap2-samples python -m roles.merchant_payment_processor_agent >"$LOG_DIR/mpp_agent.log" 2>&1 &
+$UV_RUN_CMD --package ap2-samples python -m roles.merchant_agent.payment_processor >"$LOG_DIR/mpp_agent.log" 2>&1 &
 pids+=($!)
 
 echo ""
