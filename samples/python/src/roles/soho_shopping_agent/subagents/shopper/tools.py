@@ -124,6 +124,7 @@ def update_chosen_cart_mandate(cart_id: str, tool_context: ToolContext) -> str:
     )
     if cart.contents.id == cart_id:
       tool_context.state["chosen_cart_id"] = cart_id
+      tool_context.state["cart_mandate"] = cart  # Store the actual cart_mandate object
       return f"CartMandate with ID {cart_id} selected."
   return f"CartMandate with ID {cart_id} not found."
 

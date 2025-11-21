@@ -111,6 +111,13 @@ async def _create_and_add_cart_mandate_artifact(
               data={
                   "network": ["mastercard", "paypal", "amex"],
               },
+          ),
+          PaymentMethodData(
+              supported_methods="SOHO_CREDIT",
+              data={
+                  "provider": "soho_credit",
+                  "supported_currencies": ["USD", "USDC"],
+              },
           )
       ],
       details=PaymentDetailsInit(
