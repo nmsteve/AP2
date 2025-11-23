@@ -134,6 +134,11 @@ async def request_biometric_approval(
   if not cart_mandate or not selected_plan:
     raise RuntimeError("Missing cart_mandate or selected_payment_plan in state.")
 
+  # Ensure cart_mandate is a CartMandate object, not a dict
+  if isinstance(cart_mandate, dict):
+    cart_mandate = CartMandate(**cart_mandate)
+    tool_context.state["cart_mandate"] = cart_mandate
+
   total_amount = cart_mandate.contents.payment_request.details.total.amount.value
   merchant_name = cart_mandate.contents.merchant_name
 
@@ -291,6 +296,10 @@ async def update_cart(
   updated_cart_mandate = artifact_utils.only(
       _parse_cart_mandates(task.artifacts)
   )
+
+  # Ensure it's a CartMandate object, not a dict
+  if isinstance(updated_cart_mandate, dict):
+    updated_cart_mandate = CartMandate(**updated_cart_mandate)
 
   tool_context.state["cart_mandate"] = updated_cart_mandate
   tool_context.state["shipping_address"] = shipping_address

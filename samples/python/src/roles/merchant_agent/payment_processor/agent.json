@@ -32,6 +32,6 @@
   "defaultOutputModes": [
     "application/json"
   ],
-  "url": "http://localhost:8003/a2a/merchant_payment_processor_agent",
+  "url": "http://localhost:8003/a2a/merchant_agent/payment_processor",
   "version": "1.0.0"
 }

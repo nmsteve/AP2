@@ -51,6 +51,11 @@ _soho_account_db = {
             "credit_score": 750,
         },
         "payment_methods": {
+            "soho_credit": {
+                "type": "SOHO_CREDIT",
+                "alias": "soho_credit",
+                "plan_id": None,  # Plan selected later
+            },
             "soho_pay_in_full": {
                 "type": "SOHO_CREDIT",
                 "alias": "SOHO Credit - Pay in Full",
@@ -93,6 +98,11 @@ _soho_account_db = {
             "credit_score": 720,
         },
         "payment_methods": {
+            "soho_credit": {
+                "type": "SOHO_CREDIT",
+                "alias": "soho_credit",
+                "plan_id": None,  # Plan selected later
+            },
             "soho_pay_in_full": {
                 "type": "SOHO_CREDIT",
                 "alias": "SOHO Credit - Pay in Full",

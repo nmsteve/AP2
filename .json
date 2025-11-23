@@ -1,0 +1,127 @@
+{
+    "id": "1e951213-adb6-476d-a6ff-e49dbadc20a0",
+    "jsonrpc": "2.0",
+    "result": {
+        "contextId": "610b56c4-76ee-4cb6-ac4e-c6878ef08581",
+        "history": [
+            {
+                "contextId": "610b56c4-76ee-4cb6-ac4e-c6878ef08581",
+                "kind": "message",
+                "messageId": "7d294900f0a24e5aa3ccbb6ff7461d0d",
+                "parts": [
+                    {
+                        "kind": "text",
+                        "text": "initiate_payment"
+                    },
+                    {
+                        "data": {
+                            "ap2.mandates.PaymentMandate": {
+                                "payment_mandate_contents": {
+                                    "payment_mandate_id": "95b7b096716e4f74a828e04cda0d410c",
+                                    "payment_details_id": "order_3",
+                                    "payment_details_total": {
+                                        "label": "Total",
+                                        "amount": {
+                                            "currency": "GBP",
+                                            "value": 48.5
+                                        },
+                                        "pending": null,
+                                        "refund_period": 30
+                                    },
+                                    "payment_response": {
+                                        "request_id": "order_3",
+                                        "method_name": "SOHO_CREDIT",
+                                        "details": {
+                                            "token": {
+                                                "value": "soho_token_0_user@example.com",
+                                                "raw": {
+                                                    "payment_credential_token": {
+                                                        "type": "soho_credit",
+                                                        "value": "soho_token_0_user@example.com",
+                                                        "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+                                                        "plan_id": null
+                                                    }
+                                                },
+                                                "provider_url": "http://localhost:8005/a2a/soho_credentials_provider"
+                                            },
+                                            "authorization_token": "soho_auth_user_123_1763932810.869312",
+                                            "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+                                            "payment_plan": {
+                                                "plan_id": "pay_in_4",
+                                                "name": "Pay in 4",
+                                                "installments": 4,
+                                                "amount_per_installment": 12.12,
+                                                "interest_rate": "0.00%",
+                                                "total_amount": 48.48,
+                                                "due_dates": [
+                                                    "2025-11-24",
+                                                    "2025-12-08",
+                                                    "2025-12-22",
+                                                    "2026-01-05"
+                                                ]
+                                            }
+                                        },
+                                        "shipping_address": {
+                                            "city": "San Francisco",
+                                            "country": "US",
+                                            "dependent_locality": null,
+                                            "organization": "",
+                                            "phone_number": null,
+                                            "postal_code": null,
+                                            "recipient": "John Smith",
+                                            "region": "CA",
+                                            "sorting_code": null,
+                                            "address_line": []
+                                        },
+                                        "shipping_option": null,
+                                        "payer_name": null,
+                                        "payer_email": "user@example.com",
+                                        "payer_phone": null
+                                    },
+                                    "merchant_agent": "Generic Merchant",
+                                    "timestamp": "2025-11-23T21:20:53.910244+00:00"
+                                },
+                                "user_authorization": "{\"type\": \"device_biometric\", \"authentication_method\": \"face_id\", \"signature\": \"0x9f8e7d6c5b4a_user_123\", \"timestamp\": \"2025-11-24T00:20:33.943635\", \"device_id\": \"iphone_user_123\", \"device_certificate\": {\"issuer\": \"Apple\", \"serial\": \"CERT_APPLE_XYZ\", \"valid_until\": \"2026-11-15\"}}"
+                            }
+                        },
+                        "kind": "data"
+                    },
+                    {
+                        "data": {
+                            "risk_data": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...fake_risk_data"
+                        },
+                        "kind": "data"
+                    }
+                ],
+                "role": "agent",
+                "taskId": "24cbdda6-c7ea-477a-831b-66814c1e7588"
+            }
+        ],
+        "id": "24cbdda6-c7ea-477a-831b-66814c1e7588",
+        "kind": "task",
+        "status": {
+            "message": {
+                "contextId": "610b56c4-76ee-4cb6-ac4e-c6878ef08581",
+                "kind": "message",
+                "messageId": "568fe459-be97-4e06-b502-866eebe9da7c",
+                "parts": [
+                    {
+                        "kind": "text",
+                        "text": "An error occurred: Failed to find the payment method data."
+                    }
+                ],
+                "role": "agent",
+                "taskId": "24cbdda6-c7ea-477a-831b-66814c1e7588"
+            },
+            "state": "failed",
+            "timestamp": "2025-11-23T21:31:33.006336+00:00"
+        }
+    }
+}
+
+
+{'payment_mandate_contents': {'payment_mandate_id': '95b7b096716e4f74a828e04cda0d410c', 'payment_details_id': 'order_3', 'payment_details_total': {'label': 'Total', 'amount': {'currency': 'GBP', 'value': 48.5
+            }, 'pending': None, 'refund_period': 30
+        }, 'payment_response': {'request_id': 'order_3', 'method_name': 'SOHO_CREDIT', 'details': {'token': {'value': 'soho_token_0_user@example.com', 'raw': {'payment_credential_token': {'type': 'soho_credit', 'value': 'soho_token_0_user@example.com', 'borrower_address': '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb', 'plan_id': None
+                        }
+                    }, 'provider_url': 'http: //localhost:8005/a2a/soho_credentials_provider'}, 'authorization_token': 'soho_auth_user_123_1763932810.869312', 'borrower_address': '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb', 'payment_plan': {'plan_id': 'pay_in_4', 'name': 'Pay in 4', 'installments': 4, 'amount_per_installment': 12.12, 'interest_rate': '0.00%', 'total_amount': 48.48, 'due_dates': ['2025-11-24', '2025-12-08', '2025-12-22', '2026-01-05']}}, 'shipping_address': {'city': 'San Francisco', 'country': 'US', 'dependent_locality': None, 'organization': '', 'phone_number': None, 'postal_code': None, 'recipient': 'John Smith', 'region': 'CA', 'sorting_code': None, 'address_line': []}, 'shipping_option': None, 'payer_name': None, 'payer_email': 'user@example.com', 'payer_phone': None}, 'merchant_agent': 'Generic Merchant', 'timestamp': '2025-11-23T21:20:53.910244+00:00'}, 'user_authorization': '{"type": "device_biometric", "authentication_method": "face_id", "signature": "0x9f8e7d6c5b4a_user_123", "timestamp": "2025-11-24T00:20:33.943635", "device_id": "iphone_user_123", "device_certificate": {"issuer": "Apple", "serial": "CERT_APPLE_XYZ", "valid_until": "2026-11-15"}}'}

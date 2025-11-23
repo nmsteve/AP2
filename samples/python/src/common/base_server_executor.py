@@ -147,12 +147,24 @@ class BaseServerExecutor(AgentExecutor, abc.ABC):
       tool_name = self._tool_resolver.determine_tool_to_use(prompt)
       logging.info("Using tool: %s", tool_name)
 
+      # If LLM couldn't determine tool, try simple pattern matching
+      if tool_name == "Unknown":
+        prompt_lower = prompt.lower()
+        if "initiate" in prompt_lower and "payment" in prompt_lower:
+          tool_name = "initiate_payment"
+        elif "update" in prompt_lower and "cart" in prompt_lower:
+          tool_name = "update_cart"
+        elif "find" in prompt_lower and ("item" in prompt_lower or "product" in prompt_lower):
+          tool_name = "find_items_workflow"
+        logging.info("Fallback matched tool: %s", tool_name)
+
       matching_tools = list(
           filter(lambda tool: tool.__name__ == tool_name, self._tools)
       )
       if len(matching_tools) != 1:
         raise ValueError(
-            f"Expected 1 tool matching {tool_name}, got {len(matching_tools)}"
+            f"Expected 1 tool matching {tool_name}, got {len(matching_tools)}. "
+            f"Available tools: {[t.__name__ for t in self._tools]}"
         )
       callable_tool = matching_tools[0]
       await callable_tool(data_parts, updater, current_task)

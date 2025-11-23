@@ -112,6 +112,10 @@ echo "-> Starting the SOHO Credentials Provider (port:8005 log:$LOG_DIR/soho_cre
 $UV_RUN_CMD --package ap2-samples python -m roles.soho_credentials_provider >"$LOG_DIR/soho_credentials_provider.log" 2>&1 &
 pids+=($!)
 
+echo "-> Starting the Payment Processor (port:8003 log:$LOG_DIR/payment_processor.log)..."
+$UV_RUN_CMD --package ap2-samples python -m roles.merchant_agent.payment_processor >"$LOG_DIR/payment_processor.log" 2>&1 &
+pids+=($!)
+
 echo ""
 echo "All remote servers are starting."
 

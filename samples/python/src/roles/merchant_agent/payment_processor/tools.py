@@ -88,6 +88,14 @@ async def _handle_payment_mandate(
     current_task: The current task, or None if it's a new payment.
     debug_mode: Whether the agent is in debug mode.
   """
+  # Check if this is a SOHO Credit payment (already authenticated)
+  method_name = payment_mandate.payment_mandate_contents.payment_response.method_name
+  if method_name == "SOHO_CREDIT":
+    # SOHO Credit has biometric authentication, skip OTP challenge
+    await _complete_payment(payment_mandate, updater, debug_mode)
+    return
+
+  # For card payments, use OTP challenge flow
   if current_task is None:
     await _raise_challenge(updater)
     return
@@ -175,19 +183,24 @@ async def _complete_payment(
   payment_mandate_id = (
       payment_mandate.payment_mandate_contents.payment_mandate_id
   )
-  credentials_provider = _get_credentials_provider_client(payment_mandate)
-  payment_credential = await _request_payment_credential(
-      payment_mandate,
-      credentials_provider,
-      updater,
-      debug_mode,
+
+  # Extract payment credential from the mandate (already present in token.value)
+  payment_credential = (
+      payment_mandate.payment_mandate_contents.payment_response.details.get("token", {})
   )
+  if isinstance(payment_credential, dict):
+    payment_credential_value = payment_credential.get("value", "")
+  else:
+    payment_credential_value = str(payment_credential)
 
   logging.info(
       "Calling issuer to complete payment for %s with payment credential %s...",
       payment_mandate_id,
-      payment_credential,
+      payment_credential_value,
   )
+
+  # Get credentials provider for sending receipt
+  credentials_provider = _get_credentials_provider_client(payment_mandate)
   # Call issuer to complete the payment
   payment_receipt = _create_payment_receipt(payment_mandate)
   await _send_payment_receipt_to_credentials_provider(
@@ -291,7 +304,7 @@ def _get_credentials_provider_client(
           "token"
       )
   )
-  credentials_provider_url = token_object.get("url")
+  credentials_provider_url = token_object.get("provider_url")
   return PaymentRemoteA2aClient(
       name="credentials_provider",
       base_url=credentials_provider_url,
