@@ -19,6 +19,7 @@ use based on the instructions provided.
 """
 
 import logging
+import os
 from typing import Any, Callable
 
 from a2a.server.tasks.task_updater import TaskUpdater
@@ -80,8 +81,9 @@ class FunctionCallResolver:
         called. If no suitable tool is found, it returns "Unknown".
     """
 
+    model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
     response = self._client.models.generate_content(
-        model="gemini-2.5-pro",
+        model=model_name,
         contents=prompt,
         config=self._config,
     )

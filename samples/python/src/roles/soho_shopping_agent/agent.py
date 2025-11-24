@@ -23,6 +23,8 @@ The SOHO shopping agent integrates with SOHO Credit to provide:
 This agent follows the AP2 protocol with SOHO as the Credentials Provider.
 """
 
+import os
+
 from . import tools
 from .subagents.payment_method_collector.agent import payment_method_collector
 from .subagents.shipping_address_collector.agent import shipping_address_collector
@@ -33,7 +35,7 @@ from common.system_utils import DEBUG_MODE_INSTRUCTIONS
 
 root_agent = RetryingLlmAgent(
     max_retries=0,
-    model="gemini-2.5-pro",
+    model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp"),
     name="soho_shopping_agent",
     instruction="""
           You are a SOHO shopping agent that helps users find and purchase

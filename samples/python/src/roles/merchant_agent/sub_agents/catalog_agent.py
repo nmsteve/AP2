@@ -17,6 +17,7 @@
 This agent fabricates catalog content based on the user's request.
 """
 
+import os
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -66,8 +67,9 @@ async def find_items_workflow(
     %s
         """ % DEBUG_MODE_INSTRUCTIONS
 
+  model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
   llm_response = llm_client.models.generate_content(
-      model="gemini-2.5-pro",
+      model=model_name,
       contents=prompt,
       config={
           "response_mime_type": "application/json",
