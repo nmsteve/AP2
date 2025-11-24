@@ -33,7 +33,7 @@ from common.system_utils import DEBUG_MODE_INSTRUCTIONS
 
 root_agent = RetryingLlmAgent(
     max_retries=0,
-    model="gemini-3-pro-preview",
+    model="gemini-2.5-pro",
     name="soho_shopping_agent",
     instruction="""
           You are a SOHO shopping agent that helps users find and purchase

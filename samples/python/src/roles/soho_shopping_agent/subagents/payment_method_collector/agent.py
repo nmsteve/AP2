@@ -31,7 +31,7 @@ from common.system_utils import DEBUG_MODE_INSTRUCTIONS
 
 
 payment_method_collector = RetryingLlmAgent(
-    model="gemini-3-pro-preview",
+    model="gemini-2.5-pro",
     name="payment_method_collector",
     max_retries=0,
     instruction="""

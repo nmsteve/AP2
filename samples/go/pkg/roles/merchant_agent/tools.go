@@ -74,7 +74,7 @@ func generateProductsWithLLM(query string, updater *common.TaskUpdater, storage 
 	}
 	defer client.Close()
 
-	model := client.GenerativeModel("gemini-3-pro-preview")
+	model := client.GenerativeModel("gemini-2.5-pro")
 
 	// Configure model for structured JSON output
 	model.ResponseMIMEType = "application/json"

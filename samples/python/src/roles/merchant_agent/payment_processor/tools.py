@@ -228,39 +228,6 @@ def _challenge_response_is_valid(challenge_response: str) -> bool:
   return challenge_response == "123"
 
 
-async def _request_payment_credential(
-    payment_mandate: PaymentMandate,
-    credentials_provider: PaymentRemoteA2aClient,
-    updater: TaskUpdater,
-    debug_mode: bool = False,
-) -> str:
-  """Sends a request to the Credentials Provider for payment credentials.
-
-  Args:
-    payment_mandate: The PaymentMandate containing payment details.
-    credentials_provider: The credentials provider client.
-    updater: The task updater.
-    debug_mode: Whether the agent is in debug mode.
-
-  Returns:
-    payment_credential: The payment credential details.
-  """
-  message_builder = (
-      A2aMessageBuilder()
-      .set_context_id(updater.context_id)
-      .add_text("Give me the payment method credentials for the given token.")
-      .add_data(PAYMENT_MANDATE_DATA_KEY, payment_mandate.model_dump())
-      .add_data("debug_mode", debug_mode)
-  )
-  task = await credentials_provider.send_a2a_message(message_builder.build())
-
-  if not task.artifacts:
-    raise ValueError("Failed to find the payment method data.")
-  payment_credential = artifact_utils.get_first_data_part(task.artifacts)
-
-  return payment_credential
-
-
 def _create_payment_receipt(payment_mandate: PaymentMandate) -> PaymentReceipt:
   """Creates a payment receipt.
 

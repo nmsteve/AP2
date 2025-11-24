@@ -58,7 +58,13 @@ class MerchantAgentExecutor(BaseServerExecutor):
     You are a merchant agent. Your role is to help users with their shopping
     requests.
 
-    You can find items, update shopping carts, and initiate payments.
+    Based on the request, immediately select the correct tool:
+    - If request contains "find" or "search" or IntentMandate → use find_items_workflow
+    - If request contains "update" and "cart" → use update_cart
+    - If request contains "initiate" or "payment" or PaymentMandate → use initiate_payment
+    - If request contains "dpc" or "finish" → use dpc_finish
+
+    Your ONLY output should be a tool call. Do not engage in conversation.
 
     %s
   """ % DEBUG_MODE_INSTRUCTIONS
