@@ -108,7 +108,8 @@ shopper = RetryingLlmAgent(
       appropriate cart ID.
     9. Monitor the tool's output. If the cart ID is not found, you must inform
       the user and prompt them to try again. If the selection is successful,
-      signal a successful update and hand off the process to the root_agent.
+      signal a successful update by saying "Great! Your choice has been recorded" then
+      hand off the process to the root_agent automatically.
     """ % DEBUG_MODE_INSTRUCTIONS,
     tools=[
         tools.create_intent_mandate,

@@ -17,121 +17,47 @@ This document details all API endpoints that SOHO (as Credentials Provider and M
 - `#3` POST `/token` - Refresh access token
 - `#4` GET `/v1/validate-token` - Validate token and get user context
 
-### User Profile & Shipping (5 endpoints)
-- `#6` GET `/v1/user/shipping-addresses` - Get shipping addresses
-- `#6` GET `/v1/user/credit-status` - Get credit status
-- `#7` POST `/v1/user/shipping-addresses` - Add shipping address
-- `#8` PUT `/v1/user/shipping-addresses/{id}` - Update shipping address
-- `#9` DELETE `/v1/user/shipping-addresses/{id}` - Delete shipping address
-- `#10` POST `/v1/user/set-agent-limit` - Set agent spend limit
-- `#9` GET `/v1/user/profile` - Get complete user profile
-
-### Payment Methods & Credentials (3 endpoints) **[NEW]**
-- `#10` POST `/v1/credentials/search-payment-methods` - **NEW**: Search compatible payment methods
-- `#11` POST `/v1/credentials/create-token` - **NEW**: Create payment credential token
-- `#15` POST `/v1/credentials/verify-token` - **NEW**: Verify payment credential token
-
-### BNPL & Credit Management (1 endpoint)
-- `#12` POST `/v1/credit/quote` - Request BNPL quote
-
-### Payment Processing (4 endpoints)
-- `#13` POST `/v1/pay` - **Complete payment flow (auto-approve or send push, then execute on-chain)**
-- `#14` GET `/v1/pay/status` - Poll approval status and get final payment result
-- `#22` GET `/v1/pay/qr` - Generate QR code for approval (alternative to push)
-- `#15` POST `/v1/credentials/verify-token` - Verify payment credential token
-
-### Payment Plans & History (3 endpoints)
-- `#16` GET `/v1/user/payment-plans` - Get user payment plans
-- `#17` POST `/v1/payment-plans/{id}/pay` - Make manual payment
-- `#18` GET `/v1/user/purchases` - Get purchase history
-
-### Webhooks (3 endpoints)
-- `#19` POST `/v1/webhooks/register` - Register webhook
-- `#20` Webhook Event: `payment.approved`
-- `#21` Webhook Event: `payment.completed`
-
-### Merchant Integration (2 endpoints)
-- `#23` GET `/v1/merchants/verify-payment` - Merchant verify payment
-- `#24` GET `/v1/merchants/settlements` - Get settlement info
-
 ### User Registration (1 endpoint)
 - `#5` POST `/v1/user/register` - Register new user
 
----
+### User Profile & Shipping (7 endpoints)
+- `#6` GET `/v1/user/shipping-addresses` - Get shipping addresses
+- `#7` POST `/v1/user/shipping-addresses` - Add shipping address
+- `#8` PUT `/v1/user/shipping-addresses/{id}` - Update shipping address
+- `#9` DELETE `/v1/user/shipping-addresses/{id}` - Delete shipping address
+- `#10` GET `/v1/user/credit-status` - Get credit status
+- `#11` POST `/v1/user/set-agent-limit` - Set agent spend limit
+- `#12` GET `/v1/user/profile` - Get complete user profile
 
-## Key Changes & Additions
+### BNPL & Credit Management (1 endpoint)
+- `#13` POST `/v1/credit/quote` - Request BNPL quote
 
-### ✅ **NEW Endpoints Added** (Based on Python Implementation)
+### Credentials (4 endpoints)
+- `#14` POST `/v1/credentials/request-biometric-approval` - Request biometric approval
+- `#15` GET `/v1/credentials/qr` - Generate QR code for biometric approval
+- `#16` POST `/v1/credentials/create-token` - Create payment credential token
+- `#17` POST `/v1/credentials/verify-token` - Verify payment credential token
 
-1. **`POST /v1/credentials/search-payment-methods`** (#10)
-   - Searches for user payment methods compatible with merchant requirements
-   - Called by `handle_search_payment_methods` in credentials provider
-   - Returns matching payment method aliases
+### Payment Processing (2 endpoints)
+- `#18` POST `/v1/pay` - Execute payment on-chain
+- `#19` GET `/v1/pay/{payment_id}` - Get payment receipt
 
-2. **`POST /v1/credentials/create-token`** (#11)
-   - Creates payment credential token for selected payment method
-   - Called by `handle_create_payment_credential_token`
-   - Token included in PaymentMandate sent to Payment Processor
+### Payment Plans & History (3 endpoints)
+- `#20` GET `/v1/user/payment-plans` - Get user payment plans
+- `#21` POST `/v1/payment-plans/{id}/pay` - Make manual payment
+- `#22` GET `/v1/user/purchases` - Get purchase history
 
-3. **`POST /v1/credentials/verify-token`** (#16)
-   - Payment Processor verifies token from PaymentMandate
-   - Associates token with payment_mandate_id
-   - Called before executing payment on-chain
+### Webhooks (3 endpoints)
+- `#23` POST `/v1/webhooks/register` - Register webhook
+- `#24` Webhook Event: `payment.approved`
+- `#25` Webhook Event: `payment.completed`
 
-### 🔄 **Biometric Approval Flow Simplified**
-
-**REMOVED**: `POST /v1/credentials/request-biometric-approval`
-
-**Why**: The `/v1/pay` endpoint handles approval internally:
-- Payment Processor receives PaymentMandate
-- Checks if `amount > agent_spend_limit`
-- If yes: **Automatically sends push notification** to user's mobile app
-- Returns `approval_id` for polling
-- User approves via biometric on mobile app (Face ID/Touch ID)
-- Alternative: QR code scan if push notification fails
-
-**Shopping Agent doesn't need to request approval separately** - the Payment Processor handles it!
-
-### 🔄 **Single Payment Endpoint - Simplified Architecture**
-
-**MERGED**: `/v1/pay` now handles the complete payment lifecycle:
-
-1. **Verify token** (internal)
-2. **Check agent_spend_limit**
-3. **IF amount ≤ limit**: Execute on-chain immediately, return result
-4. **IF amount > limit**: Send push notification, wait for approval, then execute on-chain
-5. **Return final result** with transaction_hash
-
-**No separate `/v1/process-payment` needed** - everything happens in one endpoint!
-
-**Benefits:**
-- Simpler API - one endpoint for all payment flows
-- Automatic execution after approval
-- Consistent with industry standards (Stripe, PayPal, etc.)
-- Merchant just polls `/v1/pay/status` and gets final result
-
-### 🔄 **Clarified Endpoint Flow**
-
-**Credentials Provider Flow (Shopping Agent → SOHO):**
-```
-1. GET credit-status → Get agent_spend_limit and user limits
-2. search-payment-methods → Find compatible methods
-3. create-token → Generate credential token
-→ Shopping Agent creates PaymentMandate with token
-→ Sends PaymentMandate to Merchant → Payment Processor
-```
-
-**Payment Processor Flow (Merchant → SOHO):**
-```
-1. verify-token → Validate token from PaymentMandate
-2. /pay → Process payment
-   - If amount ≤ agent_spend_limit: Auto-approve, return payment_hash
-   - If amount > agent_spend_limit: Send push notification, return approval_id
-3. /pay/status → Poll for approval (if approval_id returned)
-4. /process-payment → Execute on-chain
-```
+### Merchant Integration (2 endpoints)
+- `#26` GET `/v1/merchants/verify-payment` - Merchant verify payment
+- `#27` GET `/v1/merchants/settlements` - Get settlement info
 
 ---
+
 
 ## Authentication & OAuth 2.0
 
@@ -272,7 +198,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 
 ---
 
-## User Registration & Profile Management
+## User Registration
 
 ### 5. Register User
 **Endpoint:** `POST https://api.soho.finance/v1/user/register`
@@ -342,7 +268,7 @@ Content-Type: application/json
 
 ---
 
-## User Profile & Credentials (Credentials Provider)
+## User Profile & Shipping
 
 ### 6. Get User Shipping Addresses
 **Endpoint:** `GET https://api.soho.finance/v1/user/shipping-addresses`
@@ -535,7 +461,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 
 ---
 
-### 6. Get User Credit Status
+### 10. Get User Credit Status
 **Endpoint:** `GET https://api.soho.finance/v1/user/credit-status`
 
 **Purpose:** Shopping Agent checks user's available credit before purchase
@@ -585,12 +511,12 @@ Authorization: Bearer soho_agent_token_abc123def456
 
 **Business Logic:**
 - **Shopping Agent uses `agent_spend_limit` to determine if biometric approval is needed**
-- If `transaction_amount > agent_spend_limit`: Call `request-biometric-approval` (#13)
+- If `transaction_amount > agent_spend_limit`: Must call `request-biometric-approval` BEFORE creating PaymentMandate (#14)
 - If `transaction_amount <= agent_spend_limit`: Proceed without additional approval
 
 ---
 
-### 10. Set Agent Spend Limit
+### 11. Set Agent Spend Limit
 **Endpoint:** `POST https://api.soho.finance/v1/user/set-agent-limit`
 
 **Purpose:** Set or update the maximum amount an agent (admin) can spend on behalf of user per transaction
@@ -656,7 +582,7 @@ Content-Type: application/json
 
 ---
 
-### 9. Get User Profile
+### 12. Get User Profile
 **Endpoint:** `GET https://api.soho.finance/v1/user/profile`
 
 **Purpose:** Get complete user profile including contact info
@@ -689,65 +615,12 @@ Authorization: Bearer soho_agent_token_abc123def456
 
 ---
 
-## Payment Method Management (Credentials Provider)
+## BNPL Credit Management
 
-### 10. Search Payment Methods
-**Endpoint:** `POST https://api.soho.finance/v1/credentials/search-payment-methods`
+### 13. Request BNPL Quote
+**Endpoint:** `POST https://api.soho.finance/v1/credit/quote`
 
-**Purpose:** Credentials Provider searches for user's payment methods that match merchant's accepted payment types. This is called by the Shopping Agent to find compatible payment methods.
-
-**Request Headers:**
-```
-Authorization: Bearer soho_agent_token_abc123def456
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "user_email": "user@example.com",
-  "merchant_accepted_methods": [
-    {
-      "supported_methods": ["SOHO_CREDIT", "VISA", "MASTERCARD"],
-      "provider_url": "https://api.soho.finance"
-    }
-  ]
-}
-```
-
-**Request Fields:**
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `user_email` | string | Yes | User's email address |
-| `merchant_accepted_methods` | array | Yes | Array of PaymentMethodData from merchant |
-
-**Response (200 OK):**
-```json
-{
-  "payment_method_aliases": [
-    "soho_credit",
-    "SOHO Credit - Pay in Full",
-    "SOHO Credit - Pay in 4",
-    "SOHO Credit - 12 Month Plan"
-  ]
-}
-```
-
-**Response Fields:**
-| Field | Type | Description |
-|-------|------|-------------|
-| `payment_method_aliases` | array | List of payment method aliases that match merchant's requirements |
-
-**Business Logic:**
-- Checks if merchant accepts `SOHO_CREDIT` payment type
-- Returns all SOHO Credit payment method aliases if accepted
-- Returns empty array if merchant doesn't accept SOHO Credit
-- Used by Shopping Agent during payment credential selection
-
----
-
-### 11. Create Payment Credential Token
-**Endpoint:** `POST https://api.soho.finance/v1/credentials/create-token`
+**Purpose:** Get available BNPL payment plans for a purchase amount
 
 **Purpose:** Creates a payment credential token for the selected payment method. This token is used in the PaymentMandate and sent to the Merchant Payment Processor.
 
@@ -809,15 +682,6 @@ Content-Type: application/json
   "payment_method_alias": "invalid_alias"
 }
 ```
-
----
-
-## BNPL Credit Management
-
-### 12. Request BNPL Quote
-**Endpoint:** `POST https://api.soho.finance/v1/credit/quote`
-
-**Purpose:** Get available BNPL payment plans for a purchase amount
 
 **Request Headers:**
 ```
@@ -937,13 +801,206 @@ Content-Type: application/json
 
 ---
 
-## Payment Authorization & Processing
+## Credentials
 
-**AP2 Role Clarification:**
-- **Shopping Agent**: Gets quotes and user credentials, creates PaymentMandate
-- **Merchant Payment Processor (SOHO)**: Receives PaymentMandate, calls payment endpoints, executes on-chain
+### 14. Request Biometric Approval
+**Endpoint:** `POST https://api.soho.finance/v1/credentials/request-biometric-approval`
 
-### 13. Process Payment (Merchant Payment Processor)
+**Purpose:** Shopping Agent requests biometric approval BEFORE creating PaymentMandate when amount exceeds agent_spend_limit.
+
+**Request Headers:**
+```
+Authorization: Bearer soho_agent_token_abc123def456
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "user_email": "user@example.com",
+  "amount": 1250.00,
+  "merchant": "Merchant Shoes Store",
+  "payment_plan": {
+    "plan_id": "pay_in_4",
+    "payment_amount": 312.50,
+    "number_of_payments": 4
+  }
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "approval_status": "authorized",
+  "attestation": {
+    "type": "device_biometric",
+    "authentication_method": "face_id",
+    "signature": "0x9f8e7d6c5b4a_user_abc123",
+    "timestamp": "2025-11-15T15:31:00Z",
+    "device_id": "iphone_user_abc123",
+    "device_certificate": {
+      "issuer": "Apple",
+      "serial": "CERT_APPLE_XYZ",
+      "valid_until": "2026-11-15"
+    }
+  }
+}
+```
+
+**Business Logic:**
+- Sends push notification to user's SOHO mobile app
+- User sees purchase details (amount, merchant, payment plan)
+- User authenticates with Face ID/Touch ID
+- Returns signed attestation
+- **This happens BEFORE PaymentMandate creation**
+- Attestation included in `PaymentMandate.user_authorization` field
+
+---
+
+### 16. Create Payment Credential Token
+**Endpoint:** `POST https://api.soho.finance/v1/credentials/create-token`
+
+**Purpose:** Creates a payment credential token for the selected payment method. This token is used in the PaymentMandate and sent to the Merchant Payment Processor.
+
+**Request Headers:**
+```
+Authorization: Bearer soho_agent_token_abc123def456
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "user_email": "user@example.com",
+  "payment_method_alias": "SOHO Credit - Pay in 4"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "payment_credential_token": {
+    "type": "soho_credit",
+    "value": "soho_token_0_user@example.com",
+    "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+    "plan_id": "pay_in_4",
+    "provider_url": "https://api.soho.finance"
+  }
+}
+```
+
+**Business Logic:**
+- Validates that the payment method exists for the user
+- Creates a unique token linking user email and payment method
+- Token is included in PaymentMandate sent to Payment Processor
+- Token is later verified during payment processing
+
+**Error Response (404 Not Found):**
+```json
+{
+  "status": "error",
+  "error_code": "PAYMENT_METHOD_NOT_FOUND",
+  "message": "Payment method not found for user",
+  "payment_method_alias": "invalid_alias"
+}
+```
+
+---
+
+### 16. Verify Payment Credential Token
+**Endpoint:** `POST https://api.soho.finance/v1/credentials/verify-token`
+
+**Purpose:** Payment Processor verifies the payment credential token received in PaymentMandate and associates it with payment_mandate_id.
+
+**Request Headers:**
+```
+X-Merchant-API-Key: merchant_key_abc123
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "token": "soho_token_0_user@example.com",
+  "payment_mandate_id": "mandate_abc123"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "valid": true,
+  "payment_method": {
+    "type": "SOHO_CREDIT",
+    "alias": "SOHO Credit - Pay in 4",
+    "plan_id": "pay_in_4"
+  },
+  "user_info": {
+    "user_email": "user@example.com",
+    "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+  },
+  "token_updated": true
+}
+```
+
+**Error Response (401 Unauthorized):**
+```json
+{
+  "status": "error",
+  "error_code": "INVALID_TOKEN",
+  "message": "Payment credential token is invalid or expired"
+}
+```
+
+---
+
+### 15. Generate QR Code for Biometric Approval
+**Endpoint:** `GET https://api.soho.finance/v1/credentials/qr?approval_request_id={approval_request_id}`
+
+**Purpose:** Generate QR code for user to scan with mobile app for biometric approval. This is an alternative to push notification when the Shopping Agent needs biometric approval before creating PaymentMandate.
+
+**Caller:** Shopping Agent (via credentials provider client)
+
+**Request Headers:**
+```
+Authorization: Bearer soho_agent_token_abc123def456
+```
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `approval_request_id` | string | Yes | Approval request ID from credentials provider |
+
+**Response (200 OK):**
+```json
+{
+  "approval_request_id": "approval_req_xyz789",
+  "qr_code_url": "https://api.soho.finance/qr/credentials/approval_req_xyz789.png",
+  "qr_code_data": "soho://credentials/approve/approval_req_xyz789",
+  "expires_at": "2025-11-15T16:00:00Z"
+}
+```
+
+**QR Code Data Format:**
+```
+soho://credentials/approve/{approval_request_id}
+```
+
+**Business Logic:**
+- User scans QR code with SOHO mobile app
+- App displays purchase details (amount, merchant, payment plan)
+- User authenticates with Face ID/Touch ID
+- Returns to same flow as push notification approval
+
+---
+
+## Payment Processing
+
+**AP2 Protocol Flow:**
+- **Shopping Agent**: Gets user approval (biometric if needed), creates PaymentMandate, sends to merchant
+- **Merchant Payment Processor (SOHO)**: Receives PaymentMandate (which proves authorization), verifies token, executes on-chain
+
+### 18. Execute Payment
 **Endpoint:** `POST https://api.soho.finance/v1/pay`
 
 **Purpose:** Merchant Payment Processor (SOHO) processes payment for purchase. Returns immediate payment_hash if amount is within agent limit, or approval_id if user approval needed.
@@ -1037,11 +1094,11 @@ Content-Type: application/json
 - User approves via **biometric authentication** (Face ID/Touch ID) on mobile app
 - Alternative: User scans QR code (see endpoint #23) with mobile app
 - If `amount > user's agent_spend_limit`: Requires approval, returns `approval_id`
-- Agent spend limit set via endpoint #10: `POST /v1/user/set-agent-limit`
+- Agent spend limit set via endpoint #11: `POST /v1/user/set-agent-limit`
 
 ---
 
-### 14. Check Payment Status (Polling)
+### 13. Check Payment Status (Polling)
 **Endpoint:** `GET https://api.soho.finance/v1/pay/status?approval_id={approval_id}`
 
 **Purpose:** Merchant Payment Processor (SOHO) polls for user approval status (only needed when amount > agent limit and approval_id was returned from /v1/pay)
@@ -1326,9 +1383,42 @@ Content-Type: application/json
 
 ---
 
-## Payment Plan Management
+### 19. Get Payment Receipt (Optional)
+**Endpoint:** `GET https://api.soho.finance/v1/pay/{payment_id}`
 
-### 16. Get User Payment Plans
+**Purpose:** Retrieve payment details by payment ID.
+
+**Request Headers:**
+```
+X-Merchant-API-Key: merchant_key_abc123
+```
+
+**Response (200 OK):**
+```json
+{
+  "payment_id": "soho_pay_abc123",
+  "status": "completed",
+  "amount": 139.42,
+  "transaction_hash": "0xabc123def456789...",
+  "block_number": 12345678,
+  "network": "base",
+  "credit_tokens_minted": 139.42,
+  "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  "merchant_address": "0xMerchant789...",
+  "timestamp": "2025-11-15T15:32:00Z",
+  "payment_plan": {
+    "plan_id": "pay_in_4",
+    "payment_amount": 34.86,
+    "number_of_payments": 4
+  }
+}
+```
+
+---
+
+## Payment Plans & History
+
+### 20. Get User Payment Plans
 **Endpoint:** `GET https://api.soho.finance/v1/user/payment-plans`
 
 **Purpose:** Retrieve all active payment plans for user
@@ -1398,7 +1488,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 
 ---
 
-### 17. Make Manual Payment
+### 21. Make Manual Payment
 **Endpoint:** `POST https://api.soho.finance/v1/payment-plans/{plan_instance_id}/pay`
 
 **Purpose:** User makes early payment or extra payment on plan
@@ -1435,9 +1525,7 @@ Content-Type: application/json
 
 ---
 
-## Transaction History
-
-### 18. Get Purchase History
+### 22. Get Purchase History
 **Endpoint:** `GET https://api.soho.finance/v1/user/purchases`
 
 **Purpose:** Retrieve user's complete purchase history
@@ -1495,9 +1583,9 @@ Authorization: Bearer soho_agent_token_abc123def456
 
 ---
 
-## Webhooks & Notifications
+## Webhooks
 
-### 19. Register Webhook
+### 23. Register Webhook
 **Endpoint:** `POST https://api.soho.finance/v1/webhooks/register`
 
 **Purpose:** Shopping Agent registers callback URL for events
@@ -1542,7 +1630,7 @@ Content-Type: application/json
 
 ---
 
-### 20. Webhook Event: Payment Approved
+### 24. Webhook Event: Payment Approved
 **Sent To:** Shopping Agent's registered webhook URL
 
 **Event Type:** `payment.approved`
@@ -1568,7 +1656,7 @@ Content-Type: application/json
 
 ---
 
-### 21. Webhook Event: Payment Completed
+### 25. Webhook Event: Payment Completed
 **Sent To:** Shopping Agent's registered webhook URL
 
 **Event Type:** `payment.completed`
@@ -1594,45 +1682,9 @@ Content-Type: application/json
 
 ---
 
-## Mobile App Integration
+## Merchant Integration
 
-### 22. Generate QR Code for Approval (Merchant Payment Processor)
-**Endpoint:** `GET https://api.soho.finance/v1/pay/qr?approval_id={approval_id}`
-
-**Purpose:** Generate QR code for mobile app scanning (alternative to push notification) when approval required. This is an alternative flow if push notification fails or user prefers QR scanning.
-
-**Caller:** Merchant Payment Processor can generate QR for user to scan if push notification fails.
-
-**Request Headers:**
-```
-X-Merchant-API-Key: merchant_key_abc123
-```
-
-**Query Parameters:**
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `approval_id` | string | Yes | Approval ID from `/v1/pay` response |
-
-**Response (200 OK):**
-```json
-{
-  "approval_id": "approval_soho_xyz789",
-  "qr_code_url": "https://api.soho.finance/qr/approval_soho_xyz789.png",
-  "qr_code_data": "soho://approve/approval_soho_xyz789",
-  "expires_at": "2025-11-15T16:00:00Z"
-}
-```
-
-**QR Code Data Format:**
-```
-soho://approve/{approval_id}
-```
-
----
-
-## Merchant Integration (For Merchant Payment Processor)
-
-### 23. Merchant: Verify Payment
+### 26. Verify Payment
 **Endpoint:** `GET https://api.soho.finance/v1/merchants/verify-payment`
 
 **Purpose:** Merchant verifies payment was executed on-chain
@@ -1666,7 +1718,7 @@ X-Merchant-API-Key: merchant_key_abc123
 
 ---
 
-### 24. Merchant: Get Settlement Info
+### 27. Get Settlement Info
 **Endpoint:** `GET https://api.soho.finance/v1/merchants/settlements`
 
 **Purpose:** Merchant checks available balance and settlement options
@@ -1720,9 +1772,10 @@ X-Merchant-API-Key: merchant_key_abc123
    [Merchant Agent endpoints - not SOHO APIs]
 
 5. PAYMENT PREPARATION (Shopping Agent → Credentials Provider)
-   POST /v1/credit/quote                      (#12 - Get BNPL payment plan options)
-   POST /v1/credentials/search-payment-methods        (#10 - Find compatible payment methods)
-   POST /v1/credentials/create-token                  (#11 - Create payment credential token)   [Shopping Agent creates PaymentMandate with token and sends to Merchant]
+   POST /v1/credit/quote                      (#11 - Get BNPL payment plan options)
+   POST /v1/credentials/create-token          (#10 - Create payment credential token)
+
+   [No search needed - Shopping Agent knows SOHO provides SOHO Credit]   [Shopping Agent creates PaymentMandate with token and sends to Merchant]
 
 6. PAYMENT PROCESSING (Merchant → Payment Processor → SOHO)
    POST /v1/credentials/verify-token          (#15 - Verify token from PaymentMandate)
@@ -1744,15 +1797,15 @@ X-Merchant-API-Key: merchant_key_abc123
       [When status returns "completed", payment is already on-chain]
 
    GET  /v1/merchants/verify-payment          (#23 - Merchant verifies on-chain)7. POST-PURCHASE
-   GET  /v1/user/payment-plans                (#16 - View active payment plans)
-   GET  /v1/user/purchases                    (#18 - View purchase history)
-   POST /v1/payment-plans/{id}/pay            (#17 - Make manual payment)
+   GET  /v1/user/payment-plans                (#15 - View active payment plans)
+   GET  /v1/user/purchases                    (#17 - View purchase history)
+   POST /v1/payment-plans/{id}/pay            (#16 - Make manual payment)
 
 8. WEBHOOKS (OPTIONAL)
-   POST /v1/webhooks/register                 (#19 - Register for events)
+   POST /v1/webhooks/register                 (#18 - Register for events)
    [Webhooks sent]:
-      payment.approved                        (#20)
-      payment.completed                       (#21)
+      payment.approved                        (#19)
+      payment.completed                       (#20)
 ```
 
 ---
@@ -1784,10 +1837,10 @@ X-Merchant-API-Key: merchant_key_abc123
 
 | Handler Function | Maps to API Endpoint | Purpose |
 |------------------|---------------------|---------|
-| `initiate_payment` | `POST /v1/pay` (#13) | Complete payment (checks limits, approvals, executes on-chain) |
-| (internal) | `GET /v1/pay/status` (#14) | Poll for approval status and final result |
+| `initiate_payment` | `POST /v1/pay` (#12) | Complete payment (checks limits, approvals, executes on-chain) |
+| (internal) | `GET /v1/pay/status` (#13) | Poll for approval status and final result |
 | `_complete_payment` | **(Internal to /v1/pay)** | Payment execution handled automatically by /v1/pay |
-| (internal) | `POST /v1/credentials/verify-token` (#15) | Verify payment credential token |
+| (internal) | `POST /v1/credentials/verify-token` (#14) | Verify payment credential token |
 
 **Payment Flow Logic:**
 1. Payment Processor receives `PaymentMandate` from Merchant

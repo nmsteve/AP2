@@ -303,3 +303,6 @@ Sara has a SOHO account & $100 credit limit. She connects her SOHO account to an
     "memo": "API calls for product discovery",
     "type": "micro"        // or "normal"
   }
+
+
+let create a new branch soho-ap2-v1.0 . What we need to do is update from step 8 where we   need first call
