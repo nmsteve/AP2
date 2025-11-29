@@ -61,19 +61,19 @@ def find_data_parts(
 def parse_canonical_object(
     data_key: str,
     data_parts: list[dict[str, Any]],
-    canonical_object_model: BaseModel,
+    canonical_object_model: type[BaseModel],
 ) -> Any:
     """Converts the data part value for the given key to a canonical object.
 
     Args:
       data_key: The key to search for.
       data_parts: The data parts to be searched.
-      canonical_object_model: The pydantic model of the canonical object.
+      canonical_object_model: The pydantic model class of the canonical object.
 
     Returns:
       The canonical object created from the data part value.
     """
     canonical_object_data = find_data_part(data_key, data_parts)
     if canonical_object_data is None:
-        raise ValueError(f'{type(canonical_object_model)} not found.')
+        raise ValueError(f'{canonical_object_model.__name__} not found.')
     return canonical_object_model.model_validate(canonical_object_data)
