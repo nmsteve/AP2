@@ -32,14 +32,16 @@ This document details all API endpoints that SOHO (as Credentials Provider and M
 ### BNPL & Credit Management (1 endpoint)
 - `#13` POST `/v1/credit/quote` - Request BNPL quote
 
-### Credentials (4 endpoints)
+### Credentials (5 endpoints)
 - `#14` POST `/v1/credentials/request-biometric-approval` - Request biometric approval
+- `#14a` GET `/v1/credentials/approval-status` - Poll biometric approval status
 - `#15` GET `/v1/credentials/qr` - Generate QR code for biometric approval
 - `#16` POST `/v1/credentials/create-token` - Create payment credential token
 - `#17` POST `/v1/credentials/verify-token` - Verify payment credential token
 
-### Payment Processing (2 endpoints)
+### Payment Processing (3 endpoints)
 - `#18` POST `/v1/pay` - Execute payment on-chain
+- `#18a` GET `/v1/pay/status` - Poll payment approval status
 - `#19` GET `/v1/pay/{payment_id}` - Get payment receipt
 
 ### Payment Plans & History (3 endpoints)
@@ -806,7 +808,7 @@ Content-Type: application/json
 ### 14. Request Biometric Approval
 **Endpoint:** `POST https://api.soho.finance/v1/credentials/request-biometric-approval`
 
-**Purpose:** Shopping Agent requests biometric approval BEFORE creating PaymentMandate when amount exceeds agent_spend_limit.
+**Purpose:** Shopping Agent requests biometric approval BEFORE creating PaymentMandate. In AP2, biometric approval is always required for all transactions to ensure user authorization.
 
 **Request Headers:**
 ```
@@ -828,10 +830,42 @@ Content-Type: application/json
 }
 ```
 
-**Response (200 OK):**
+**Response (202 Accepted - Approval Pending):**
 ```json
 {
-  "approval_status": "authorized",
+  "status": "pending_approval",
+  "approval_id": "approval_bio_xyz789",
+  "amount": 1250.00,
+  "merchant": "Merchant Shoes Store",
+  "approval_method": "mobile_app",
+  "message": "Push notification sent to user's SOHO mobile app",
+  "expires_at": "2025-11-15T16:00:00Z",
+  "polling_url": "https://api.soho.finance/v1/credentials/approval-status?approval_id=approval_bio_xyz789"
+}
+```
+
+**Agent Must Poll for Approval Status:**
+
+The Shopping Agent must poll the status endpoint to know when approval is complete:
+
+**Endpoint:** `GET https://api.soho.finance/v1/credentials/approval-status?approval_id={approval_id}`
+
+**Response While Pending (202 Accepted):**
+```json
+{
+  "approval_id": "approval_bio_xyz789",
+  "status": "pending_approval",
+  "created_at": "2025-11-15T15:30:00Z",
+  "expires_at": "2025-11-15T16:00:00Z"
+}
+```
+
+**Response After Approval (200 OK):**
+```json
+{
+  "approval_id": "approval_bio_xyz789",
+  "status": "approved",
+  "approved_at": "2025-11-15T15:31:00Z",
   "attestation": {
     "type": "device_biometric",
     "authentication_method": "face_id",
@@ -847,13 +881,127 @@ Content-Type: application/json
 }
 ```
 
+**Response If User Rejects (403 Forbidden):**
+```json
+{
+  "approval_id": "approval_bio_xyz789",
+  "status": "rejected",
+  "rejected_at": "2025-11-15T15:32:00Z",
+  "reason": "User declined the transaction in mobile app"
+}
+```
+
+**Response If Timeout (408 Request Timeout):**
+```json
+{
+  "approval_id": "approval_bio_xyz789",
+  "status": "expired",
+  "created_at": "2025-11-15T15:30:00Z",
+  "expired_at": "2025-11-15T16:00:00Z",
+  "reason": "User did not respond within 30 minutes"
+}
+```
+
 **Business Logic:**
 - Sends push notification to user's SOHO mobile app
 - User sees purchase details (amount, merchant, payment plan)
 - User authenticates with Face ID/Touch ID
-- Returns signed attestation
+- **Shopping Agent polls `/v1/credentials/approval-status` until status is "approved", "rejected", or "expired"**
 - **This happens BEFORE PaymentMandate creation**
-- Attestation included in `PaymentMandate.user_authorization` field
+- Attestation included in `PaymentMandate.user_authorization` field after approval
+
+---
+
+### 14a. Poll Biometric Approval Status
+**Endpoint:** `GET https://api.soho.finance/v1/credentials/approval-status?approval_id={approval_id}`
+
+**Purpose:** Shopping Agent polls to check if user has completed biometric approval. This endpoint is called repeatedly after requesting biometric approval (endpoint #14) until the user approves, rejects, or the request expires.
+
+**Request Headers:**
+```
+Authorization: Bearer soho_agent_token_abc123def456
+```
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `approval_id` | string | Yes | Approval ID returned from `/v1/credentials/request-biometric-approval` |
+
+**Response While Pending (202 Accepted):**
+```json
+{
+  "approval_id": "approval_bio_xyz789",
+  "status": "pending_approval",
+  "amount": 1250.00,
+  "merchant": "Merchant Shoes Store",
+  "created_at": "2025-11-15T15:30:00Z",
+  "expires_at": "2025-11-15T16:00:00Z"
+}
+```
+
+**Response After User Approves (200 OK):**
+```json
+{
+  "approval_id": "approval_bio_xyz789",
+  "status": "approved",
+  "approved_at": "2025-11-15T15:31:00Z",
+  "attestation": {
+    "type": "device_biometric",
+    "authentication_method": "face_id",
+    "signature": "0x9f8e7d6c5b4a_user_abc123",
+    "timestamp": "2025-11-15T15:31:00Z",
+    "device_id": "iphone_user_abc123",
+    "device_certificate": {
+      "issuer": "Apple",
+      "serial": "CERT_APPLE_XYZ",
+      "valid_until": "2026-11-15"
+    }
+  }
+}
+```
+
+**Response If User Rejects (403 Forbidden):**
+```json
+{
+  "approval_id": "approval_bio_xyz789",
+  "status": "rejected",
+  "rejected_at": "2025-11-15T15:32:00Z",
+  "reason": "User declined the transaction in mobile app"
+}
+```
+
+**Response If Timeout (408 Request Timeout):**
+```json
+{
+  "approval_id": "approval_bio_xyz789",
+  "status": "expired",
+  "created_at": "2025-11-15T15:30:00Z",
+  "expired_at": "2025-11-15T16:00:00Z",
+  "reason": "User did not respond within 30 minutes"
+}
+```
+
+**Response Fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `approval_id` | string | Unique identifier for this approval request |
+| `status` | string | Current status: "pending_approval", "approved", "rejected", or "expired" |
+| `attestation` | object | Only present when status is "approved" - contains biometric proof |
+| `approved_at` | string | ISO 8601 timestamp when user approved |
+| `rejected_at` | string | ISO 8601 timestamp when user rejected |
+| `expired_at` | string | ISO 8601 timestamp when request expired |
+
+**Polling Recommendations:**
+- Poll every 2-3 seconds while status is "pending_approval"
+- Stop polling once status changes to "approved", "rejected", or "expired"
+- Maximum timeout: 30 minutes from `created_at`
+- Use exponential backoff if you receive rate limit errors
+
+**Business Logic:**
+- Agent must poll this endpoint to know when approval process is complete
+- When status is "approved", use the `attestation` object in the PaymentMandate
+- When status is "rejected" or "expired", abort the payment flow and notify user
+- The attestation signature proves the user authorized this specific transaction
 
 ---
 
@@ -1003,10 +1151,10 @@ soho://credentials/approve/{approval_request_id}
 ### 18. Execute Payment
 **Endpoint:** `POST https://api.soho.finance/v1/pay`
 
-**Purpose:** Merchant Payment Processor (SOHO) processes payment for purchase. Returns immediate payment_hash if amount is within agent limit, or approval_id if user approval needed.
+**Purpose:** Merchant Payment Processor (SOHO) processes payment for purchase. Returns immediate payment_hash if amount is within agent limit OR if biometric attestation is already present, or approval_id if user approval needed.
 
 **Internal Process When Approval Required:**
-- Payment Processor detects `amount > agent_spend_limit`
+- Payment Processor detects `amount > agent_spend_limit` AND no attestation present in PaymentMandate
 - Automatically sends push notification to user's SOHO mobile app
 - User approves via biometric (Face ID/Touch ID)
 - OR user can scan QR code (see endpoint #23)
@@ -1071,6 +1219,22 @@ Content-Type: application/json
 }
 ```
 
+**On-Chain Auto-Approval Process:**
+
+When a transaction is auto-approved (amount ≤ agent_spend_limit OR attestation present), the Payment Processor executes two on-chain transactions:
+
+1. **Set Agent Spend Limit** - Temporarily increase the agent spend limit to cover this specific transaction:
+   ```solidity
+   await creditor.setAgentSpendLimit(borrower, amount);
+   ```
+
+2. **Execute Spend** - Execute the payment on-chain:
+   ```solidity
+   const tx = await creditor.spend(borrower, merchant, amount, paymentPlanId);
+   ```
+
+This two-step process ensures that even when auto-approving, the agent's spending authority is properly set on-chain before executing the payment.
+
 **Response (202 Accepted - Approval Required, Amount > Agent Limit):**
 ```json
 {
@@ -1089,16 +1253,18 @@ Content-Type: application/json
 
 **Business Logic:**
 - If `amount ≤ user's agent_spend_limit`: Auto-approved, returns `payment_hash`
-- If `amount > user's agent_spend_limit`: **Internally sends push notification to mobile app**, returns `approval_id`
+- If `amount > user's agent_spend_limit` AND `attestation` present in PaymentMandate: Auto-approved (biometric already done), returns `payment_hash`
+- If `amount > user's agent_spend_limit` AND NO `attestation` in PaymentMandate: **Internally sends push notification to mobile app**, returns `approval_id`
 - **Push notification** displays: transaction amount, merchant, payment plan
 - User approves via **biometric authentication** (Face ID/Touch ID) on mobile app
 - Alternative: User scans QR code (see endpoint #23) with mobile app
-- If `amount > user's agent_spend_limit`: Requires approval, returns `approval_id`
 - Agent spend limit set via endpoint #11: `POST /v1/user/set-agent-limit`
+- **Note:** If Shopping Agent obtained biometric approval beforehand (endpoint #14), the attestation will be in the PaymentMandate and no additional approval is needed
+- **On-Chain:** All auto-approved transactions execute two smart contract calls: `setAgentSpendLimit(borrower, amount)` followed by `spend(borrower, merchant, amount, paymentPlanId)`
 
 ---
 
-### 13. Check Payment Status (Polling)
+### 18a. Poll Payment Approval Status
 **Endpoint:** `GET https://api.soho.finance/v1/pay/status?approval_id={approval_id}`
 
 **Purpose:** Merchant Payment Processor (SOHO) polls for user approval status (only needed when amount > agent limit and approval_id was returned from /v1/pay)
@@ -1162,10 +1328,17 @@ X-Merchant-API-Key: merchant_key_abc123
 | `block_number` | integer | Block where transaction was confirmed |
 | `credit_tokens_minted` | number | Amount of SOHOCredit tokens minted to merchant |
 
+**Polling Recommendations:**
+- Poll every 2-3 seconds while status is "pending_approval"
+- Stop polling once status changes to "completed", "rejected", or "expired"
+- Maximum timeout: 30 minutes from `created_at`
+- Use exponential backoff if you receive rate limit errors
+
 **Business Logic:**
 - When user approves via mobile app, payment **automatically executes on-chain**
 - No separate call needed - `/v1/pay` handles entire flow
-- Polling `/v1/pay/status` returns final transaction details when complete
+- Polling `/v1/pay/status` (endpoint #18a) returns final transaction details when complete
+- Agent must poll this endpoint to know when payment approval process is complete
 
 **Response If User Rejects (403 Forbidden):**
 ```json
