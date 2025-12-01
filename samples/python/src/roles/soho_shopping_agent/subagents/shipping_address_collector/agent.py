@@ -67,14 +67,14 @@ shipping_address_collector = RetryingLlmAgent(
                   credentials with the AI Agent.
 
                   But this is a demo, so I will assume you have granted me access
-                  to your account, with the login of user@example.com.
+                  to your account, with the login of borrower1@example.com.
 
                   Is that ok?"
 
         Step 2d: Wait for the user's agreement (they need to say yes/ok/sure).
 
         Step 2e: Once the user agrees, call the 'get_shipping_address' tool
-                 with user_email="user@example.com"
+                 with user_email="borrower1@example.com"
 
         Step 2f: The tool will return the shipping address. Transfer back to
                  the root_agent with the shipping address.

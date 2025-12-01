@@ -32,6 +32,7 @@ class SohoCredentialsProviderExecutor(BaseServerExecutor):
             tools.handle_get_bnpl_quote,
             tools.handle_request_biometric_approval,
             tools.handle_create_payment_credential_token,
+            tools.handle_payment_receipt,
         ],
         system_prompt="You are the SOHO Credentials Provider managing credit and payment methods.",
     )

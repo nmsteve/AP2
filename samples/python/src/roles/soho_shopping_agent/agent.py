@@ -88,6 +88,10 @@ root_agent = RetryingLlmAgent(
              You will receive a push notification on your SOHO mobile app.
              Please approve the purchase using Face ID / Touch ID.
 
+             📱 For this demo, your SOHO account credentials are:
+             Email: borrower1@example.com
+             Password: Borrower123!
+
              Purchase Details:
              [Show product, amount, payment plan details]
 

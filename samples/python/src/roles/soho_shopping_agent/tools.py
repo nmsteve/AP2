@@ -62,11 +62,18 @@ async def get_bnpl_options(
   total_amount = cart_mandate.contents.payment_request.details.total.amount.value
   merchant_name = cart_mandate.contents.merchant_name
 
+  # Validate that total amount is under $100 for mock API integration
+  if total_amount >= 100.00:
+    raise RuntimeError(
+        f"Total amount ${total_amount:.2f} exceeds $100.00 limit for SOHO API demo. "
+        "Please select products with a lower total price."
+    )
+
   message = (
       A2aMessageBuilder()
       .set_context_id(tool_context.state["shopping_context_id"])
       .add_text("Get the BNPL quote for the user")
-      .add_data("user_email", "user@example.com")  # In production, get from auth
+      .add_data("user_email", "borrower1@example.com")  # In production, get from auth
       .add_data("amount", total_amount)
       .add_data("merchant_name", merchant_name)
       .add_data("debug_mode", debug_mode)
@@ -146,7 +153,7 @@ async def request_biometric_approval(
       A2aMessageBuilder()
       .set_context_id(tool_context.state["shopping_context_id"])
       .add_text("Request biometric approval for purchase")
-      .add_data("user_email", "user@example.com")
+      .add_data("user_email", "borrower1@example.com")
       .add_data("amount", total_amount)
       .add_data("merchant", merchant_name)
       .add_data("payment_plan", selected_plan)

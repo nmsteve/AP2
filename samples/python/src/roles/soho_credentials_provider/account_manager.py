@@ -29,6 +29,60 @@ _soho_account_db = {
     "user@example.com": {
         "user_id": "user_123",
         "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+        "password": "Borrower123!",
+    },
+    "borrower1@example.com": {
+        "user_id": "borrower_001",
+        "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+        "password": "Borrower123!",
+        "kyc_verified": True,
+        "shipping_address": {
+            "recipient": "Borrower One",
+            "organization": "",
+            "address_line": ["123 Main St"],
+            "city": "San Francisco",
+            "region": "CA",
+            "postal_code": "94105",
+            "country": "US",
+            "phone_number": "+1-555-0100",
+        },
+        "contact": {
+            "email": "borrower1@example.com",
+            "phone": "+1-555-0100",
+        },
+        "credit_profile": {
+            "credit_limit": 5000.00,
+            "available_credit": 4900.00,
+            "outstanding_debt": 100.00,
+            "credit_score": 750,
+        },
+        "payment_methods": {
+            "soho_credit": {
+                "type": "SOHO_CREDIT",
+                "alias": "soho_credit",
+                "plan_id": None,
+            },
+            "soho_pay_in_full": {
+                "type": "SOHO_CREDIT",
+                "alias": "SOHO Credit - Pay in Full",
+                "plan_id": "pay_in_full",
+            },
+            "soho_pay_in_4": {
+                "type": "SOHO_CREDIT",
+                "alias": "SOHO Credit - Pay in 4",
+                "plan_id": "pay_in_4",
+            },
+            "soho_pay_in_12": {
+                "type": "SOHO_CREDIT",
+                "alias": "SOHO Credit - 12 Month Plan",
+                "plan_id": "pay_in_12",
+            },
+        },
+    },
+    "user@example.com": {
+        "user_id": "user_123",
+        "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+        "password": "Borrower123!",
         "kyc_verified": True,
         "shipping_address": {
             "recipient": "John Smith",

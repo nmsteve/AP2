@@ -58,11 +58,18 @@ async def find_items_workflow(
       INTENT_MANDATE_DATA_KEY, data_parts, IntentMandate
   )
   intent = intent_mandate.natural_language_description
+
+  # Check for max_price constraint
+  max_price = message_utils.find_data_part("max_price", data_parts)
+  price_constraint = ""
+  if max_price:
+    price_constraint = f"\n\nIMPORTANT: All products MUST have a total price (amount.value) UNDER ${max_price}. Do not generate products with price >= ${max_price}."
+
   prompt = f"""
         Based on the user's request for '{intent}', your task is to generate 3
         complete, unique and realistic PaymentItem JSON objects.
 
-        You MUST exclude all branding from the PaymentItem `label` field.
+        You MUST exclude all branding from the PaymentItem `label` field.{price_constraint}
 
     %s
         """ % DEBUG_MODE_INSTRUCTIONS

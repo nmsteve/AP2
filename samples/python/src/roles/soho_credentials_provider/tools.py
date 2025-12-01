@@ -363,3 +363,149 @@ async def handle_create_payment_credential_token(
 
   await updater.add_artifact([Part(root=DataPart(data=token))])
   await updater.complete()
+
+
+async def handle_payment_receipt(
+    data_parts: list[dict[str, Any]],
+    updater: TaskUpdater,
+    current_task: Task | None,
+) -> None:
+  """Handles payment receipt from Payment Processor and executes on-chain payment.
+
+  This function:
+  1. Validates the payment amount is under $100
+  2. Authenticates with the SOHO API using borrower credentials
+  3. Calls the /api/v1/agent/pay endpoint to execute on-chain payment
+
+  Args:
+    data_parts: DataPart contents containing payment_receipt.
+    updater: The TaskUpdater instance for updating the task state.
+    current_task: The current task if there is one.
+  """
+  import os
+  import httpx
+  from ap2.types.payment_receipt import PAYMENT_RECEIPT_DATA_KEY
+
+  payment_receipt_data = message_utils.find_data_part(
+      PAYMENT_RECEIPT_DATA_KEY, data_parts
+  )
+
+  if not payment_receipt_data:
+    logger.warning("No payment receipt found in message")
+    await updater.complete()
+    return
+
+  # Extract payment details
+  amount_str = str(payment_receipt_data.get("amount", "0"))
+  amount_usd = float(amount_str)
+
+  # Step 0: Ensure product price is below $100
+  if amount_usd >= 100.00:
+    error_msg = f"Payment amount ${amount_usd} exceeds $100 limit for mock API"
+    logger.error(error_msg)
+    await updater.add_artifact([
+        Part(root=DataPart(data={"error": error_msg, "status": "failed"}))
+    ])
+    await updater.complete()
+    return
+
+  # Convert USD to wei (assuming 1 USD = 10^7 wei for mock)
+  amount_wei = str(int(amount_usd * 10_000_000))
+
+  # Get SOHO API base URL from environment or use default
+  api_base_url = os.environ.get("SOHO_API_URL", "http://localhost:32788")
+
+  # Step 1 & 2: Use borrower1@example.com credentials
+  borrower_email = "borrower1@example.com"
+  borrower_password = "Borrower123!"
+
+  # Mock merchant address
+  merchant_address = "0x029241b72abab1b29fecdd1c609920bb8706e7b2"
+  payment_plan_id = "0"  # Pay in full
+
+  try:
+    async with httpx.AsyncClient(timeout=30.0) as client:
+      # Step 3a: Login to get access token
+      logger.info(f"Authenticating with SOHO API as {borrower_email}...")
+      login_response = await client.post(
+          f"{api_base_url}/api/v1/auth/login",
+          json={"email": borrower_email, "password": borrower_password},
+          headers={"Content-Type": "application/json"}
+      )
+
+      if login_response.status_code != 200:
+        error_msg = f"Login failed: {login_response.status_code} - {login_response.text}"
+        logger.error(error_msg)
+        await updater.add_artifact([
+            Part(root=DataPart(data={"error": error_msg, "status": "failed"}))
+        ])
+        await updater.complete()
+        return
+
+      login_data = login_response.json()
+      access_token = login_data.get("data", {}).get("tokens", {}).get("accessToken")
+
+      if not access_token:
+        error_msg = "No access token in login response"
+        logger.error(error_msg)
+        await updater.add_artifact([
+            Part(root=DataPart(data={"error": error_msg, "status": "failed"}))
+        ])
+        await updater.complete()
+        return
+
+      logger.info(f"Successfully authenticated. Access token obtained.")
+
+      # Step 3b: Call /api/v1/agent/pay endpoint
+      logger.info(f"Executing payment: merchant={merchant_address}, amount={amount_wei} wei (${amount_usd}), plan={payment_plan_id}")
+      pay_response = await client.post(
+          f"{api_base_url}/api/v1/agent/pay",
+          json={
+              "merchant": merchant_address,
+              "amount": amount_wei,
+              "paymentPlanId": payment_plan_id
+          },
+          headers={
+              "Content-Type": "application/json",
+              "Authorization": f"Bearer {access_token}"
+          }
+      )
+
+      if pay_response.status_code not in [200, 201]:
+        error_msg = f"Payment failed: {pay_response.status_code} - {pay_response.text}"
+        logger.error(error_msg)
+        await updater.add_artifact([
+            Part(root=DataPart(data={"error": error_msg, "status": "failed"}))
+        ])
+        await updater.complete()
+        return
+
+      pay_data = pay_response.json()
+      logger.info(f"Payment successful: {pay_data}")
+
+      # Add successful payment data to artifacts
+      await updater.add_artifact([
+          Part(root=DataPart(data={
+              "status": "success",
+              "payment_result": pay_data,
+              "amount_usd": amount_usd,
+              "amount_wei": amount_wei,
+              "merchant": merchant_address,
+              "payment_plan_id": payment_plan_id
+          }))
+      ])
+
+  except httpx.RequestError as e:
+    error_msg = f"API request failed: {str(e)}"
+    logger.error(error_msg)
+    await updater.add_artifact([
+        Part(root=DataPart(data={"error": error_msg, "status": "failed"}))
+    ])
+  except Exception as e:
+    error_msg = f"Unexpected error during payment: {str(e)}"
+    logger.error(error_msg, exc_info=True)
+    await updater.add_artifact([
+        Part(root=DataPart(data={"error": error_msg, "status": "failed"}))
+    ])
+
+  await updater.complete()
