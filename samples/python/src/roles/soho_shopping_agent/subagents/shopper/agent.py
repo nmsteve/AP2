@@ -106,10 +106,10 @@ shopper = RetryingLlmAgent(
     7. Ask the user which item they would like to purchase.
     8. After they choose, call the update_chosen_cart_mandate tool with the
       appropriate cart ID.
-    9. Monitor the tool's output. If the cart ID is not found, you must inform
-      the user and prompt them to try again. If the selection is successful,
-      signal a successful update by saying "Great! Your choice has been recorded" then
-      hand off the process to the root_agent automatically.
+    9. After the tool runs, check its result. If the cart ID isn’t found,
+      tell the user and ask them to enter it again. If the cart ID is valid,
+      confirm success by saying: ‘Great! Your choice has been recorded.’
+      Then automatically pass control back to the root_agent.”
     """ % DEBUG_MODE_INSTRUCTIONS,
     tools=[
         tools.create_intent_mandate,

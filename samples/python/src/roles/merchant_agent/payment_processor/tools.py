@@ -203,18 +203,26 @@ async def _complete_payment(
   credentials_provider = _get_credentials_provider_client(payment_mandate)
   # Call issuer to complete the payment
   payment_receipt = _create_payment_receipt(payment_mandate)
-  await _send_payment_receipt_to_credentials_provider(
+  credentials_task = await _send_payment_receipt_to_credentials_provider(
       payment_receipt,
       credentials_provider,
       updater,
       debug_mode,
   )
+
+  # Extract transaction details from credentials provider response
+  credentials_data = artifact_utils.get_first_data_part(credentials_task.artifacts) or {}
+
+  # Add payment receipt and transaction details to artifacts
+  response_data = {PAYMENT_RECEIPT_DATA_KEY: payment_receipt.model_dump()}
+
+  # Include blockchain transaction details if present
+  for key in ["transaction_hash", "transaction_id", "block_number", "gas_used", "amount_formatted", "payment_result"]:
+    if key in credentials_data:
+      response_data[key] = credentials_data[key]
+
   await updater.add_artifact([
-      Part(
-          root=DataPart(
-              data={PAYMENT_RECEIPT_DATA_KEY: payment_receipt.model_dump()}
-          )
-      )
+      Part(root=DataPart(data=response_data))
   ])
   success_message = updater.new_agent_message(
       parts=_create_text_parts("{'status': 'success'}")
@@ -284,7 +292,7 @@ async def _send_payment_receipt_to_credentials_provider(
     credentials_provider: PaymentRemoteA2aClient,
     updater: TaskUpdater,
     debug_mode: bool = False,
-) -> None:
+):
   """Sends the payment receipt to the Credentials Provider.
 
   Args:
@@ -292,16 +300,19 @@ async def _send_payment_receipt_to_credentials_provider(
     credentials_provider: The credentials provider client.
     updater: The task updater.
     debug_mode: Whether the agent is in debug mode.
+
+  Returns:
+    The task response from the credentials provider containing transaction details.
   """
 
   message_builder = (
       A2aMessageBuilder()
       .set_context_id(updater.context_id)
-      .add_text("Here is the payment receipt. No action is required.")
+      .add_text("Here is the payment receipt. Pay with SOHO Credit.")
       .add_data(PAYMENT_RECEIPT_DATA_KEY, payment_receipt.model_dump())
       .add_data("debug_mode", debug_mode)
   )
-  await credentials_provider.send_a2a_message(message_builder.build())
+  return await credentials_provider.send_a2a_message(message_builder.build())
 
 
 def _create_text_parts(*texts: str) -> list[Part]:

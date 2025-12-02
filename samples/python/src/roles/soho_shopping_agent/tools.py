@@ -42,6 +42,122 @@ from common.a2a_message_builder import A2aMessageBuilder
 import logging
 
 
+async def load_test_payment_mandate(
+    tool_context: ToolContext,
+) -> dict:
+  """Loads a pre-configured test payment mandate for testing initiate_payment.
+
+  This tool loads a complete payment mandate with all required data including:
+  - Payment details
+  - User authorization (biometric attestation)
+  - Borrower address
+  - Payment plan details
+
+  Args:
+    tool_context: The ADK supplied tool context.
+
+  Returns:
+    Success message with payment mandate summary.
+  """
+  # Load the test payment mandate data
+  test_mandate_data = {
+      'payment_mandate_id': '043254041f4d46759f0e7497761c9ee1',
+      'payment_details_id': 'order_1',
+      'payment_details_total': {
+          'label': 'Total',
+          'amount': {'currency': 'USD', 'value': 2.49},
+          'pending': None,
+          'refund_period': 30
+      },
+      'payment_response': {
+          'request_id': 'order_1',
+          'method_name': 'SOHO_CREDIT',
+          'details': {
+              'token': {
+                  'value': 'soho_token_1_borrower1@example.com',
+                  'raw': {},
+                  'provider_url': 'http://localhost:8005/a2a/soho_credentials_provider'
+              },
+              'authorization_token': 'soho_auth_borrower_001_1764692463.890651',
+              'borrower_address': '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+              'payment_plan': {
+                  'plan_id': 'pay_in_full',
+                  'name': 'Pay in Full',
+                  'installments': 1,
+                  'amount_per_installment': 28.49,
+                  'interest_rate': '0.00%',
+                  'total_amount': 28.49,
+                  'due_dates': ['2026-01-01']
+              }
+          },
+          'shipping_address': {
+              'city': 'San Francisco',
+              'country': 'US',
+              'dependent_locality': None,
+              'organization': None,
+              'phone_number': None,
+              'postal_code': None,
+              'recipient': 'Borrower One',
+              'region': 'CA',
+              'sorting_code': None,
+              'address_line': None
+          },
+          'shipping_option': None,
+          'payer_name': None,
+          'payer_email': 'borrower1@example.com',
+          'payer_phone': None
+      },
+      'merchant_agent': 'Generic Merchant',
+      'timestamp': '2025-12-02T16:23:25.770039+00:00'
+  }
+
+  user_authorization = {
+      "type": "device_biometric",
+      "authentication_method": "face_id",
+      "signature": "0x9f8e7d6c5b4a_borrower_001",
+      "timestamp": "2025-12-02T19:22:01.408090",
+      "device_id": "iphone_borrower_001",
+      "device_certificate": {
+          "issuer": "Apple",
+          "serial": "CERT_APPLE_XYZ",
+          "valid_until": "2026-11-15"
+      }
+  }
+
+  # Create PaymentMandateContents object
+  payment_mandate_contents = PaymentMandateContents.model_validate(test_mandate_data)
+
+  # Create PaymentMandate with user authorization
+  payment_mandate = PaymentMandate(
+      payment_mandate_contents=payment_mandate_contents,
+      user_authorization=json.dumps(user_authorization)
+  )
+
+  # Create risk data (required by initiate_payment)
+  risk_data = {
+      "device_id": "iphone_borrower_001",
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+      "timestamp": datetime.now(timezone.utc).isoformat(),
+      "risk_score": 0.15,
+      "risk_level": "LOW"
+  }
+
+  # Store in tool context state
+  tool_context.state["signed_payment_mandate"] = payment_mandate.model_dump()
+  tool_context.state["risk_data"] = risk_data
+  tool_context.state["shopping_context_id"] = str(uuid.uuid4())
+
+  return {
+      "status": "success",
+      "message": "Test payment mandate loaded successfully",
+      "amount": 5.49,
+      "payment_plan": "Pay in Full",
+      "borrower_email": "borrower1@example.com",
+      "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+  }
+
+
 async def get_bnpl_options(
     tool_context: ToolContext,
     debug_mode: bool = False,
@@ -424,7 +540,24 @@ async def initiate_payment(tool_context: ToolContext, debug_mode: bool = False):
   task = await merchant_agent_client.send_a2a_message(outgoing_message_builder)
   store_receipt_if_present(task, tool_context)
   tool_context.state["initiate_payment_task_id"] = task.id
-  return task.status
+
+  # Extract transaction details from artifacts
+  all_data = artifact_utils.get_first_data_part(task.artifacts)
+  transaction_hash = all_data.get("transaction_hash", "N/A")
+  transaction_id = all_data.get("transaction_id", "N/A")
+  block_number = all_data.get("block_number", "N/A")
+  gas_used = all_data.get("gas_used", "N/A")
+  amount_formatted = all_data.get("amount_formatted", "N/A")
+
+  return {
+      "status": str(task.status),
+      "transaction_hash": transaction_hash,
+      "transaction_id": transaction_id,
+      "block_number": block_number,
+      "gas_used": gas_used,
+      "amount_formatted": amount_formatted,
+      "payment_result": all_data.get("payment_result", {})
+  }
 
 
 def store_receipt_if_present(task, tool_context: ToolContext) -> None:

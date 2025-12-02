@@ -395,9 +395,13 @@ async def handle_payment_receipt(
     await updater.complete()
     return
 
-  # Extract payment details
-  amount_str = str(payment_receipt_data.get("amount", "0"))
-  amount_usd = float(amount_str)
+  # Extract payment details - amount is a dict with 'currency' and 'value'
+  amount_data = payment_receipt_data.get("amount", {})
+  if isinstance(amount_data, dict):
+    amount_usd = float(amount_data.get("value", 0))
+  else:
+    # Fallback if amount is already a number
+    amount_usd = float(amount_data)
 
   # Step 0: Ensure product price is below $100
   if amount_usd >= 100.00:
@@ -409,11 +413,13 @@ async def handle_payment_receipt(
     await updater.complete()
     return
 
-  # Convert USD to wei (assuming 1 USD = 10^7 wei for mock)
-  amount_wei = str(int(amount_usd * 10_000_000))
+  # Convert USD to USDC smallest unit (USDC has 6 decimal places)
+  # 1 USD = 1,000,000 micro-USDC
+  amount_wei = str(int(amount_usd * 1_000_000))
 
   # Get SOHO API base URL from environment or use default
-  api_base_url = os.environ.get("SOHO_API_URL", "http://localhost:32788")
+  api_base_url = os.environ.get("SOHO_API_URL", "http://localhost:32775")
+  logger.info(f"Using SOHO API URL: {api_base_url}")
 
   # Step 1 & 2: Use borrower1@example.com credentials
   borrower_email = "borrower1@example.com"
@@ -424,7 +430,8 @@ async def handle_payment_receipt(
   payment_plan_id = "0"  # Pay in full
 
   try:
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    # Increase timeout to 120 seconds for blockchain transactions which can be slow
+    async with httpx.AsyncClient(timeout=120.0) as client:
       # Step 3a: Login to get access token
       logger.info(f"Authenticating with SOHO API as {borrower_email}...")
       login_response = await client.post(
@@ -483,10 +490,32 @@ async def handle_payment_receipt(
       pay_data = pay_response.json()
       logger.info(f"Payment successful: {pay_data}")
 
+      # Extract transaction details from response
+      transaction_hash = pay_data.get("transactionHash") or (pay_data.get("data", {}).get("transactionHash"))
+      transaction_id = pay_data.get("data", {}).get("transactionId")
+      block_number = pay_data.get("data", {}).get("blockNumber")
+      gas_used = pay_data.get("data", {}).get("gasUsed")
+      amount_formatted = pay_data.get("data", {}).get("amountFormatted")
+
+      # Log transaction details prominently for easy copying
+      logger.info(f"=" * 80)
+      logger.info(f"PAYMENT SUCCESSFUL!")
+      logger.info(f"Transaction Hash: {transaction_hash}")
+      logger.info(f"Transaction ID: {transaction_id}")
+      logger.info(f"Block Number: {block_number}")
+      logger.info(f"Gas Used: {gas_used}")
+      logger.info(f"Amount: {amount_formatted} USDC (${amount_usd})")
+      logger.info(f"=" * 80)
+
       # Add successful payment data to artifacts
       await updater.add_artifact([
           Part(root=DataPart(data={
               "status": "success",
+              "transaction_hash": transaction_hash,
+              "transaction_id": transaction_id,
+              "block_number": block_number,
+              "gas_used": gas_used,
+              "amount_formatted": amount_formatted,
               "payment_result": pay_data,
               "amount_usd": amount_usd,
               "amount_wei": amount_wei,
@@ -495,8 +524,14 @@ async def handle_payment_receipt(
           }))
       ])
 
+  except httpx.ConnectError as e:
+    error_msg = f"Failed to connect to SOHO API at {api_base_url}. Is the SOHO API server running? Error: {str(e)}"
+    logger.error(error_msg)
+    await updater.add_artifact([
+        Part(root=DataPart(data={"error": error_msg, "status": "failed"}))
+    ])
   except httpx.RequestError as e:
-    error_msg = f"API request failed: {str(e)}"
+    error_msg = f"API request failed: {type(e).__name__} - {str(e)}"
     logger.error(error_msg)
     await updater.add_artifact([
         Part(root=DataPart(data={"error": error_msg, "status": "failed"}))

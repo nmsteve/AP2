@@ -162,8 +162,10 @@ GOOGLE_API_KEY=your_api_key_here
 
 ### 3. Run the Example
 
+from the root i.e `/AP2`
+
 ```bash
-scenarios/a2a/human-present/soho-ap2/run.sh
+samples/python/scenarios/a2a/human-present/soho-ap2/run.sh
 ```
 
 This will:
