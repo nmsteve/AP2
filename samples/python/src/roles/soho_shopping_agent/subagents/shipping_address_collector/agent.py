@@ -67,7 +67,7 @@ shipping_address_collector = RetryingLlmAgent(
                   credentials with the AI Agent.
 
                   But this is a demo, so I will assume you have granted me access
-                  to your account, with the login of borrower1@example.com.
+                  to your account, with the login of stephennjugi18@gmail.com.
 
                   Is that ok?"
 

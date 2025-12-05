@@ -421,9 +421,9 @@ async def handle_payment_receipt(
   api_base_url = os.environ.get("SOHO_API_URL", "http://localhost:32775")
   logger.info(f"Using SOHO API URL: {api_base_url}")
 
-  # Step 1 & 2: Use borrower1@example.com credentials
-  borrower_email = "borrower1@example.com"
-  borrower_password = "Borrower123!"
+  # Step 1 & 2: Usestephennjugi18@gmail.com credentials
+  borrower_email = "stephennjugi18@gmail.com"
+  borrower_password = "Furaha45$%"
 
   # Mock merchant address
   merchant_address = "0x029241b72abab1b29fecdd1c609920bb8706e7b2"
