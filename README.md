@@ -1,134 +1,363 @@
-# Agent Payments Protocol (AP2)
+# SOHO Credit Shopping Agent
 
-[![Apache License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/google-agentic-commerce/AP2)
+This example demonstrates the Agent Payments Protocol (AP2) with **SOHO Credit** as the Credentials Provider and Payment Processor.
 
-<!-- markdownlint-disable MD041 -->
-<p align="center">
-  <img src="docs/assets/ap2_graphic.png" alt="Agent Payments Protocol Graphic">
-</p>
+## Overview
 
-This repository contains code samples and demos of the Agent Payments Protocol.
+This implementation showcases a complete shopping flow using:
+- **SOHO Credit**: On-chain credit system with flexible BNPL (Buy Now Pay Later) plans
+- **AP2 Protocol**: IntentMandate → CartMandate → PaymentMandate flow
+- **Biometric Authentication**: Simulated Face ID/Touch ID approval via SOHO mobile app
+- **Blockchain Settlement**: On-chain credit transactions via Creditor.sol on Base
 
-## Intro to AP2 Video
+## SOHO Credit (AP2) Shopping Flow - Implementation Status
 
-[![A2A Intro Video](https://img.youtube.com/vi/yLTp3ic2j5c/hqdefault.jpg)](https://goo.gle/ap2-video)
+1. User Prompt - DONE
+2. Sign Intent Mandate - DONE
+3. Find Products - DONE
+4. Sign Cart Mandate - DONE
+5. Get Credentials Provider: SOHO Credit - DONE
+6. Get Shipping Address - DONE
+7. Update Cart Mandate - DONE
+8. Get BNPL Options - DONE
+9. Select BNPL Plan - DONE
+10. Request Biometric Approval - DONE
+11. Create Payment Credential Token - DONE
+12. Sign Payment Mandate - DONE
+13. Complete Purchase - NOT YET DONE
 
-### AP2 on The Agent Factory
 
-[![The Agent Factory - Episode 8: Agent payments, can you do my shopping?](https://img.youtube.com/vi/T1MtWnEYXM0/hqdefault.jpg)](https://youtu.be/T1MtWnEYXM0?si=QkJWnAiav0JAP9F6)
 
-## About the Samples
+## Key Features
 
-These samples use [Agent Development Kit (ADK)](https://google.github.io/adk-docs/) and Gemini 2.5 Flash.
+### 1. **BNPL Payment Plans**
+Users can choose from multiple payment options:
+- **Pay in Full**: Single payment, 0% interest
+- **Pay in 4**: Four equal installments, 0% interest
+- **12 Month Plan**: Monthly payments, 5.99% interest
 
-The Agent Payments Protocol doesn't require the use of either. While these were
-used in the samples, you're free to use any tools you prefer to build your
-agents.
+### 2. **Biometric Approval**
+- Simulates push notification to SOHO mobile app
+- User approves purchase with Face ID/Touch ID
+- Device attestation signature attached to payment mandate
 
-## Navigating the Repository
+### 3. **On-Chain Credit**
+- Instant settlement on Base blockchain
+- No traditional card network fees
+- Non-reversible transactions (no chargeback fraud)
+- Transparent credit limits and debt tracking
 
-The **`samples`** directory contains a collection of curated scenarios meant to
-demonstrate the key components of the Agent Payments Protocol.
+## Architecture
 
-The scenarios can be found in the [**`samples/android/scenarios`**](samples/android/scenarios) and [**`samples/python/scenarios`**](samples/python/scenarios) directories.
-
-Each scenario contains:
-
-- a `README.md` file describing the scenario and instructions for running it.
-- a `run.sh` script to simplify the process of running the scenario locally.
-
-This demonstration features various agents and servers, with most source code
-located in [**`samples/python/src`**](samples/python/src/). Scenarios that use an Android app as the
-shopping assistant have their source code in [**`samples/android`**](samples/android/).
-
-## Quickstart
-
-### Prerequisites
-
-- Python 3.10 or higher
-- [`uv`](https://docs.astral.sh/uv/getting-started/installation/) package manager
-
-### Setup
-
-You can authenticate using either a Google API Key or Vertex AI.
-
-For either method, you can set the required credentials as environment variables in your shell or place them in a `.env` file at the root of your project.
-
-#### Option 1: Google API Key (Recommended for development)
-
-1. Obtain a Google API key from [Google AI Studio](http://aistudio.google.com/apikey).
-2. Set the `GOOGLE_API_KEY` environment variable.
-
-    - **As an environment variable:**
-
-        ```sh
-        export GOOGLE_API_KEY='your_key'
-        ```
-
-    - **In a `.env` file:**
-
-        ```sh
-        GOOGLE_API_KEY='your_key'
-        ```
-
-#### Option 2: [Vertex AI](https://cloud.google.com/vertex-ai) (Recommended for production)
-
-1. **Configure your environment to use Vertex AI.**
-    - **As environment variables:**
-
-        ```sh
-        export GOOGLE_GENAI_USE_VERTEXAI=true
-        export GOOGLE_CLOUD_PROJECT='your-project-id'
-        export GOOGLE_CLOUD_LOCATION='global' # or your preferred region
-        ```
-
-    - **In a `.env` file:**
-
-        ```sh
-        GOOGLE_GENAI_USE_VERTEXAI=true
-        GOOGLE_CLOUD_PROJECT='your-project-id'
-        GOOGLE_CLOUD_LOCATION='global'
-        ```
-
-2. **Authenticate your application.**
-    - **Using the [`gcloud` CLI](https://cloud.google.com/sdk/docs/install):**
-
-        ```sh
-        gcloud auth application-default login
-        ```
-
-    - **Using a Service Account:**
-
-        ```sh
-        export GOOGLE_APPLICATION_CREDENTIALS='/path/to/your/service-account-key.json'
-        ```
-
-### How to Run a Scenario
-
-To run a specific scenario, follow the instructions in its `README.md`. It will
-generally follow this pattern:
-
-1. Navigate to the root of the repository.
-
-    ```sh
-    cd AP2
-    ```
-
-1. Run the run script to install dependencies & start the agents.
-
-    ```sh
-    bash samples/python/scenarios/your-scenario-name/run.sh
-    ```
-
-1. Navigate to the Shopping Agent URL and begin engaging.
-
-### Installing the AP2 Types Package
-
-The protocol's core objects are defined in the [`src/ap2/types`](src/ap2/types)
-directory. A PyPI package will be published at a later time. Until then, you can
-install the types package directly using this command:
-
-```sh
-uv pip install git+https://github.com/google-agentic-commerce/AP2.git@main
 ```
+┌──────────┐  ┌────────────────┐  ┌──────────────────┐  ┌──────────┐
+│   User   │  │ SOHO Shopping  │  │ SOHO Credentials │  │ Merchant │
+│          │  │     Agent      │  │    Provider      │  │  Agent   │
+└────┬─────┘  └───────┬────────┘  └────────┬─────────┘  └────┬─────┘
+     │                │                     │                 │
+     │ "Buy shoes"    │                     │                 │
+     │───────────────>│                     │                 │
+     │                │                     │                 │
+     │                │  Search products    │                 │
+     │                │─────────────────────────────────────> │
+     │                │                     │                 │
+     │                │  Get shipping addr  │                 │
+     │                │────────────────────>│                 │
+     │                │                     │                 │
+     │                │  Get BNPL options   │                 │
+     │                │────────────────────>│                 │
+     │                │                     │                 │
+     │ Select plan    │                     │                 │
+     │───────────────>│                     │                 │
+     │                │                     │                 │
+     │                │  Request biometric  │                 │
+     │                │────────────────────>│                 │
+     │                │                     │                 │
+     │ [Face ID] ✓    │  Attestation        │                 │
+     │───────────────>│<────────────────────│                 │
+     │                │                     │                 │
+     │ Confirm        │  Initiate payment   │                 │
+     │───────────────>│─────────────────────────────────────> │
+     │                │                     │                 │
+     │ Receipt ✓      │                     │                 │
+     │<───────────────│                     │                 │
+```
+
+## Agents
+
+### 1. **SOHO Shopping Agent** (Port: ADK Web UI)
+Main agent that coordinates the shopping experience:
+- Collects user intent and product preferences
+- Presents BNPL payment plan options
+- Manages biometric approval workflow
+- Creates payment mandate with SOHO Credit details
+- Initiates payment with merchant
+
+**Tools:**
+- `get_bnpl_options` - Fetch payment plan options from SOHO
+- `select_payment_plan` - Store user's selected plan
+- `request_biometric_approval` - Request Face ID/Touch ID approval
+- `update_cart` - Update cart with shipping address
+- `create_soho_payment_mandate` - Create payment mandate with SOHO Credit
+- `attach_biometric_attestation` - Attach biometric signature
+- `initiate_payment` - Send payment to merchant
+
+**Sub-agents:**
+- `shopper` - Searches for products matching user intent
+- `shipping_address_collector` - Gets shipping address from SOHO
+- `payment_method_collector` - Gets payment credentials from SOHO
+
+### 2. **SOHO Credentials Provider** (Port: 8005)
+Manages user authentication, credit, and payment credentials:
+- Credit status and availability checks
+- BNPL payment plan generation
+- Shipping address management
+- Biometric approval simulation
+- Payment credential tokens
+
+**Functions:**
+- `get_shipping_address` - Returns user's default shipping address
+- `get_credit_status` - Returns credit limits and availability
+- `get_bnpl_quote` - Generates payment plan options
+- `request_biometric_approval` - Simulates mobile app approval
+- `search_payment_methods` - Returns SOHO Credit payment methods
+- `create_payment_credential_token` - Creates payment token
+
+### 3. **Merchant Agent** (Port: 8001)
+Represents the merchant's backend:
+- Product catalog and search
+- Cart creation and management
+- CartMandate signing
+- Payment processing (forwards to SOHO)
+- Order fulfillment
+
+## Setup
+
+### 0. Prerequisites
+
+- Python 3.10+
+- `uv` package manager
+- Google API key (for Gemini LLM) from https://aistudio.google.com
+
+### 1. Install Dependencies
+
+From the repository root:
+
+```bash
+cd samples/python
+uv sync
+```
+
+### 2. Configure Environment
+
+Go back to the repository root,
+
+Create a `.env` file:
+
+```bash
+# Google API Key for Gemini LLM
+GOOGLE_API_KEY=your_api_key_here
+
+# Or use Vertex AI with Application Default Credentials
+# GOOGLE_GENAI_USE_VERTEXAI=true
+
+# Gemini model for LLM tool selection and agent processing
+# Options: gemini-3-pro-previw, gemini-2.5-pro (powerful), gemini-2.5-flash, gemini-2.0-flash-exp (fast),   gemini-1.5-pro, gemini-1.5-flash
+GEMINI_MODEL=gemini-2.5-pro
+
+# SOHO API URL
+SOHO_API_URL=https://api.sohopay.xyz
+```
+
+### 3. Run the Example
+
+from the root i.e `/AP2`
+
+```bash
+samples/python/scenarios/a2a/human-present/soho-ap2/run.sh
+```
+
+This will:
+1. Start the Merchant Agent (port 8001)
+2. Start the SOHO Credentials Provider (port 8005)
+3. Launch the SOHO Shopping Agent web UI
+4. Open your browser to http://localhost:8080
+
+## Usage
+
+### Example Conversation
+
+**You:** "I want to buy white running shoes under $150"
+
+**Agent:** Shows search results from merchant
+
+**You:** "I'll take the Nike Air Max 90"
+
+**Agent:** Shows cart with shipping address from SOHO
+
+**Agent:** Shows BNPL payment plan options:
+```
+1️⃣ Pay in Full - $139.42
+   • Due: Dec 15, 2025
+   • Interest: 0%
+
+2️⃣ Pay in 4 - $34.86 x 4 payments
+   • Due: Nov 15, Nov 29, Dec 13, Dec 27
+   • Interest: 0%
+
+3️⃣ 12 Month Plan - $12.45/month
+   • Starting: Dec 15, 2025
+   • Interest: 5.99%
+```
+
+**You:** "I'll go with Pay in 4"
+
+**Agent:** Requests biometric approval (simulated)
+
+**You:** "Approve purchase"
+
+**Agent:** Shows order confirmation with:
+- Order number
+- Product details
+- Payment plan schedule
+- Blockchain transaction hash
+- Credit status update
+- Shipping tracking
+
+## Mock Data
+
+The SOHO Credentials Provider uses mock user data:
+
+```python
+{
+  "user_id": "user_123",
+  "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  "credit_profile": {
+    "credit_limit": 5000.00,
+    "available_credit": 4139.42,
+    "outstanding_debt": 860.58
+  },
+  "shipping_addresses": [
+    {
+      "street": "123 Main St",
+      "city": "San Francisco",
+      "state": "CA",
+      "zip": "94105"
+    }
+  ]
+}
+```
+
+## BNPL Algorithm
+
+The credentials provider generates payment plans dynamically:
+
+```python
+# Pay in 4
+installment = total_amount / 4
+due_dates = [today, today+14, today+28, today+42]
+
+# 12 Month Plan
+monthly_payment = (total_amount * 1.0599) / 12
+due_dates = [today+30*i for i in range(1, 13)]
+```
+
+## Biometric Approval Flow
+
+1. Shopping Agent requests approval
+2. SOHO sends push notification (simulated)
+3. User authenticates with Face ID/Touch ID (simulated)
+4. SOHO returns attestation signature:
+   ```json
+   {
+     "type": "device_biometric",
+     "authentication_method": "face_id",
+     "signature": "0x9f8e7d6c...",
+     "timestamp": "2025-11-15T15:36:00Z",
+     "device_id": "iphone_user123"
+   }
+   ```
+5. Attestation attached to PaymentMandate
+6. Merchant verifies attestation before processing
+
+## Payment Mandate Structure
+
+```json
+{
+  "payment_mandate_contents": {
+    "payment_mandate_id": "abc123...",
+    "payment_response": {
+      "method_name": "SOHO_CREDIT",
+      "details": {
+        "authorization_token": "soho_auth_xyz789...",
+        "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+        "payment_plan": {
+          "plan_id": "pay_in_4",
+          "installments": 4,
+          "amount_per_installment": 34.86
+        }
+      }
+    }
+  },
+  "user_authorization": {
+    "type": "device_biometric",
+    "signature": "0x9f8e7d6c..."
+  }
+}
+```
+
+## Stopping the Example
+
+Press `Ctrl+C` in the terminal. The script will automatically clean up all background processes.
+
+## Logs
+
+Log files are stored in `.logs/` directory:
+- `merchant_agent.log` - Merchant agent logs
+- `soho_credentials_provider.log` - SOHO credentials provider logs
+
+## Troubleshooting
+
+### Missing GOOGLE_API_KEY
+```
+Error: Please set your GOOGLE_API_KEY environment variable
+```
+**Solution:** Add `GOOGLE_API_KEY=your_key` to `.env` file in repository root
+
+### Port Already in Use
+```
+Error: Address already in use
+```
+**Solution:** Kill processes on ports 8001, 8005, or 8080:
+```bash
+lsof -ti:8001,8005,8080 | xargs kill -9
+```
+
+### Agent Not Responding
+**Solution:** Check log files in `.logs/` directory for errors
+
+## Production Considerations
+
+This is a demo implementation. For production:
+
+1. **Replace mock data** with real database queries
+2. **Implement actual biometric** approval via mobile SDK
+3. **Add smart contract integration** for on-chain settlement
+4. **Implement proper cryptographic** hashing and signing
+5. **Add comprehensive error** handling and retry logic
+6. **Implement rate limiting** and fraud detection
+7. **Add transaction monitoring** and reconciliation
+8. **Secure API endpoints** with proper authentication
+
+## Related Documentation
+
+- [AP2 Payment Flow](../../../../docs/AP2_PAYMENT_FLOW.md)
+- [AP2 Specification](https://ap2-protocol.net)
+- [A2A Protocol](https://a2aprotocol.ai)
+- [SOHO Credit Documentation](../../../../docs/Architecture.md)
+
+## License
+
+Copyright 2025 Google LLC
+
+Licensed under the Apache License, Version 2.0
