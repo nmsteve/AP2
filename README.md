@@ -24,7 +24,7 @@ This implementation showcases a complete shopping flow using:
 10. Request Biometric Approval - DONE
 11. Create Payment Credential Token - DONE
 12. Sign Payment Mandate - DONE
-13. Complete Purchase - NOT YET DONE
+13. Complete Purchase -  DONE
 
 
 
