@@ -40,10 +40,10 @@ async def handle_get_shipping_address(
     updater: TaskUpdater,
     current_task: Task | None,
 ) -> None:
-  """Handles a request to get the user's shipping address from SOHO.
+  """Handles a request to get the user's shipping address(es) from SOHO.
 
   Args:
-    data_parts: DataPart contents containing user_email.
+    data_parts: DataPart contents containing user_email and optional address_key.
     updater: The TaskUpdater instance for updating the task state.
     current_task: The current task if there is one.
   """
@@ -51,8 +51,51 @@ async def handle_get_shipping_address(
   if not user_email:
     raise ValueError("user_email is required for get_shipping_address")
 
-  # Use account manager to get shipping address
-  shipping_address = account_manager.get_account_shipping_address(user_email)
+  address_key = message_utils.find_data_part("address_key", data_parts)
+
+  # Use account manager to get shipping address(es)
+  account = account_manager.get_account(user_email)
+  if not account:
+    raise ValueError(f"User not found: {user_email}")
+
+  # Check if requesting all addresses or a specific one
+  if address_key:
+    # Get specific address
+    shipping_addresses = account.get("shipping_addresses", {})
+    if address_key not in shipping_addresses:
+      # Fall back to default address
+      shipping_address = account_manager.get_account_shipping_address(user_email)
+    else:
+      shipping_address = shipping_addresses[address_key]
+  else:
+    # Check if request is for all addresses
+    shipping_addresses = account.get("shipping_addresses", {})
+    if shipping_addresses and "all" in str(current_task.message.parts[0]).lower():
+      # Return all addresses
+      contact_addresses = []
+      for key, addr in shipping_addresses.items():
+        contact_address = ContactAddress(
+            recipient=addr["recipient"],
+            organization=addr.get("organization", ""),
+            addressLine=addr["address_line"],
+            city=addr["city"],
+            region=addr["region"],
+            postalCode=addr["postal_code"],
+            country=addr["country"],
+            phoneNumber=addr.get("phone_number", "")
+        )
+        contact_addresses.append(contact_address)
+
+      # Add all addresses as artifacts
+      for contact_address in contact_addresses:
+        await updater.add_artifact(
+            [Part(root=DataPart(data={CONTACT_ADDRESS_DATA_KEY: contact_address.model_dump()}))]
+        )
+      await updater.complete()
+      return
+    else:
+      # Get default shipping address
+      shipping_address = account_manager.get_account_shipping_address(user_email)
 
   contact_address = ContactAddress(
       recipient=shipping_address["recipient"],

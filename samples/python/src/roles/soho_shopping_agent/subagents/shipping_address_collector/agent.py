@@ -73,11 +73,26 @@ shipping_address_collector = RetryingLlmAgent(
 
         Step 2d: Wait for the user's agreement (they need to say yes/ok/sure).
 
-        Step 2e: Once the user agrees, call the 'get_shipping_address' tool
-                 with user_email="borrower1@example.com"
+        Step 2e: Once the user agrees, call the 'get_shipping_addresses' tool
+                 with user_email="stephennjugi18@gmail.com"
 
-        Step 2f: The tool will return the shipping address. Transfer back to
-                 the root_agent with the shipping address.
+        Step 2f: The tool will return all available shipping addresses. Present
+                 them to the user with a message like:
+                 "We found the following addresses on your account:
+                 - Home: [address details]
+                 - Upcountry: [address details]
+                 - Office: [address details]
+
+                 Where would you like us to ship your order?"
+
+        Step 2g: WAIT for the user to choose an address (home, upcountry, or office).
+                 Do NOT proceed until they respond.
+
+        Step 2h: Once the user selects an address, call 'select_shipping_address'
+                 with user_email="stephennjugi18@gmail.com" and the chosen address_key
+                 (e.g., "home", "upcountry", or "office").
+
+        Step 2i: Transfer back to the root_agent with the selected shipping address.
 
         Scenario 2:
         Condition: The user wants to enter their shipping address manually.
@@ -87,6 +102,7 @@ shipping_address_collector = RetryingLlmAgent(
         2. Transfer back to the root_agent with the shipping address.
     """ % DEBUG_MODE_INSTRUCTIONS,
     tools=[
-        tools.get_shipping_address,
+        tools.get_shipping_addresses,
+        tools.select_shipping_address,
     ],
 )

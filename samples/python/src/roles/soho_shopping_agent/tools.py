@@ -74,7 +74,7 @@ async def load_test_payment_mandate(
           'method_name': 'SOHO_CREDIT',
           'details': {
               'token': {
-                  'value': 'soho_token_1_borrower1@example.com',
+                  'value': 'soho_token_1_stephennjugi18@gmail.com',
                   'raw': {},
                   'provider_url': 'http://localhost:8005/a2a/soho_credentials_provider'
               },
@@ -97,14 +97,14 @@ async def load_test_payment_mandate(
               'organization': None,
               'phone_number': None,
               'postal_code': None,
-              'recipient': 'Borrower One',
+              'recipient': 'stephen N',
               'region': 'CA',
               'sorting_code': None,
               'address_line': None
           },
           'shipping_option': None,
           'payer_name': None,
-          'payer_email': 'borrower1@example.com',
+          'payer_email': 'stephennjugi18@gmail.com',
           'payer_phone': None
       },
       'merchant_agent': 'Generic Merchant',
@@ -153,7 +153,7 @@ async def load_test_payment_mandate(
       "message": "Test payment mandate loaded successfully",
       "amount": 5.49,
       "payment_plan": "Pay in Full",
-      "borrower_email": "borrower1@example.com",
+      "borrower_email": "stephennjugi18@gmail.com",
       "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
   }
 
@@ -189,7 +189,7 @@ async def get_bnpl_options(
       A2aMessageBuilder()
       .set_context_id(tool_context.state["shopping_context_id"])
       .add_text("Get the BNPL quote for the user")
-      .add_data("user_email", "borrower1@example.com")  # In production, get from auth
+      .add_data("user_email", "stephennjugi18@gmail.com")  # In production, get from auth
       .add_data("amount", total_amount)
       .add_data("merchant_name", merchant_name)
       .add_data("debug_mode", debug_mode)
@@ -269,7 +269,7 @@ async def request_biometric_approval(
       A2aMessageBuilder()
       .set_context_id(tool_context.state["shopping_context_id"])
       .add_text("Request biometric approval for purchase")
-      .add_data("user_email", "borrower1@example.com")
+      .add_data("user_email", "stephennjugi18@gmail.com")
       .add_data("amount", total_amount)
       .add_data("merchant", merchant_name)
       .add_data("payment_plan", selected_plan)

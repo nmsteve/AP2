@@ -68,10 +68,14 @@ shopper = RetryingLlmAgent(
       any user guidance on price in the intent mandate. Use user's preference for
       the price as a filter when recommending products for the user to select
       from.
-    4. Present the IntentMandate to the user in a clear, well-formatted summary.
-      Start with the statement: "Please confirm the following details for your
-      purchase. Note that this information will be shared with the merchant."
-      And then has a row space and a breakdown of the details:
+    4. CRITICAL: Present the IntentMandate to the user and WAIT for their confirmation.
+      DO NOT proceed to step 5 until the user explicitly confirms.
+
+      Present the IntentMandate in a clear, well-formatted summary:
+      Start with: "Please confirm the following details for your purchase.
+      Note that this information will be shared with the merchant."
+
+      Then add a blank line and show the breakdown:
         Item Description: The natural_language_description. Never include any
           user guidance on price in the intent mandate.
         User Confirmation Required: A human-readable version of
@@ -85,7 +89,11 @@ shopper = RetryingLlmAgent(
         human-readable relative time (e.g., "in 1 hour", "in 2 days").
 
       After the breakdown, leave a blank line and end with: "Shall I proceed?"
-    5. Once the user confirms, use the 'find_products' tool. It will
+
+      STOP HERE and wait for user response. DO NOT call find_products yet.
+
+    5. ONLY AFTER the user confirms (e.g., "yes", "proceed", "go ahead", "confirm"),
+      then use the 'find_products' tool. It will
       return a list of `CartMandate` objects.
     6. For each CartMandate object in the list, create a visually distinct entry
       that includes the following details from the object:

@@ -99,17 +99,20 @@ root_agent = RetryingLlmAgent(
           9. Call the `request_biometric_approval` tool. This simulates sending
               a push notification to the user's SOHO mobile app. In production,
               the user would see the purchase details and authenticate with
-              Face ID or Touch ID on their device.
+              Face ID or Touch ID on their device. Wait for the tool to return
+              successfully before proceeding to step 10.
 
-          10. Once biometric approval is received, inform the user:
+          10. Once biometric approval is received from the tool, inform the user:
               "✅ Biometric approval received from your SOHO mobile app"
+              Then immediately proceed to step 11.
 
           11. Call `create_payment_credential_token` to create a payment
               credential token for SOHO Credit using the user's email and
-              payment method alias.
+              payment method alias. After the tool successfully returns,
+              inform the user:
               "✅ Payment credential token created."
 
-          12. Call the `create_soho_payment_mandate` tool to create a payment
+         12. Call the `create_soho_payment_mandate` tool to create a payment
               mandate with SOHO Credit details including the selected BNPL plan.
 
           13. Present the final purchase summary to the user:

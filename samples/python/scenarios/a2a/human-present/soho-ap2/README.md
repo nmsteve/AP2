@@ -131,13 +131,13 @@ Represents the merchant's backend:
 - Payment processing (forwards to SOHO)
 - Order fulfillment
 
-## Prerequisites
+## Setup
+
+### 0. Prerequisites
 
 - Python 3.10+
 - `uv` package manager
-- Google API key (for Gemini LLM)
-
-## Setup
+- Google API key (for Gemini LLM) from https://aistudio.google.com
 
 ### 1. Install Dependencies
 
@@ -150,7 +150,9 @@ uv sync
 
 ### 2. Configure Environment
 
-Create a `.env` file in the repository root:
+Go back to the repository root,
+
+Create a `.env` file:
 
 ```bash
 # Google API Key for Gemini LLM
@@ -158,6 +160,13 @@ GOOGLE_API_KEY=your_api_key_here
 
 # Or use Vertex AI with Application Default Credentials
 # GOOGLE_GENAI_USE_VERTEXAI=true
+
+# Gemini model for LLM tool selection and agent processing
+# Options: gemini-3-pro-previw, gemini-2.5-pro (powerful), gemini-2.5-flash, gemini-2.0-flash-exp (fast),   gemini-1.5-pro, gemini-1.5-flash
+GEMINI_MODEL=gemini-2.5-pro
+
+# SOHO API URL
+SOHO_API_URL=https://api.sohopay.xyz
 ```
 
 ### 3. Run the Example
