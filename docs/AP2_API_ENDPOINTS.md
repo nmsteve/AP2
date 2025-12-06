@@ -12,10 +12,12 @@ This document details all API endpoints that SOHO (as Credentials Provider and M
 ## Quick Reference: All Endpoints by Category
 
 ### Authentication & OAuth (4 endpoints)
-- `#1` GET `/authorize` - Initiate OAuth authorization
-- `#2` POST `/token` - Exchange code for token / Refresh token
-- `#3` POST `/token` - Refresh access token
-- `#4` GET `/v1/validate-token` - Validate token and get user context
+> **Note:** OAuth 2.0 authentication will be implemented in a future phase. Currently, API key authentication is used for all endpoints. Include `X-API-Key` header in all requests.
+
+- `#1` GET `/authorize` - Initiate OAuth authorization *(Future)*
+- `#2` POST `/token` - Exchange code for token / Refresh token *(Future)*
+- `#3` POST `/token` - Refresh access token *(Future)*
+- `#4` GET `/v1/validate-token` - Validate token and get user context *(Future)*
 
 ### User Registration (1 endpoint)
 - `#5` POST `/v1/user/register` - Register new user
@@ -60,11 +62,41 @@ This document details all API endpoints that SOHO (as Credentials Provider and M
 
 ---
 
+## Authentication
 
-## Authentication & OAuth 2.0
+### Current Implementation: API Key Authentication
 
-### 1. Initiate OAuth Authorization
-**Endpoint:** `GET https://auth.soho.finance/authorize`
+All API endpoints currently use API key authentication. Include the following header in all requests:
+
+**Request Headers:**
+```
+X-API-Key: your_api_key_here
+Content-Type: application/json
+```
+
+**Example Request:**
+```bash
+curl -X GET https://api.sohopay.xyz/v1/user/profile \
+  -H "X-API-Key: soho_api_key_abc123" \
+  -H "Content-Type: application/json"
+```
+
+**Error Response (401 Unauthorized):**
+```json
+{
+  "error": "unauthorized",
+  "message": "Invalid or missing API key"
+}
+```
+
+---
+
+## Authentication & OAuth 2.0 *(Future Implementation)*
+
+> **Note:** The following OAuth 2.0 endpoints are planned for future implementation to provide secure, token-based authentication with fine-grained permission scopes. For now, use API key authentication as described above.
+
+### 1. Initiate OAuth Authorization *(Future)*
+**Endpoint:** `GET https://api.sohopay.xyz/authorize`
 
 **Purpose:** User grants Shopping Agent access to their SOHO credit
 
@@ -79,7 +111,7 @@ This document details all API endpoints that SOHO (as Credentials Provider and M
 
 **Example:**
 ```
-GET https://auth.soho.finance/authorize?
+GET https://api.sohopay.xyz/authorize?
   client_id=shopping_agent_123&
   redirect_uri=https://agent.example.com/callback&
   response_type=code&
@@ -102,8 +134,8 @@ Redirect to: https://agent.example.com/callback?
 
 ---
 
-### 2. Exchange Authorization Code for Token
-**Endpoint:** `POST https://auth.soho.finance/token`
+### 2. Exchange Authorization Code for Token *(Future)*
+**Endpoint:** `POST https://api.sohopay.xyz/token`
 
 **Purpose:** Shopping Agent exchanges authorization code for access token
 
@@ -145,8 +177,8 @@ client_secret=agent_secret_xyz789
 
 ---
 
-### 3. Refresh Access Token
-**Endpoint:** `POST https://auth.soho.finance/token`
+### 3. Refresh Access Token *(Future)*
+**Endpoint:** `POST https://api.sohopay.xyz/token`
 
 **Purpose:** Get new access token using refresh token
 
@@ -171,8 +203,8 @@ client_secret=agent_secret_xyz789
 
 ---
 
-### 4. Validate Token
-**Endpoint:** `GET https://api.soho.finance/v1/validate-token`
+### 4. Validate Token *(Future)*
+**Endpoint:** `GET https://api.sohopay.xyz/v1/validate-token`
 
 **Purpose:** Verify token is valid and get user context
 
@@ -203,7 +235,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 ## User Registration
 
 ### 5. Register User
-**Endpoint:** `POST https://api.soho.finance/v1/user/register`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/user/register`
 
 **Purpose:** Create a new user account in SOHO system
 
@@ -273,7 +305,7 @@ Content-Type: application/json
 ## User Profile & Shipping
 
 ### 6. Get User Shipping Addresses
-**Endpoint:** `GET https://api.soho.finance/v1/user/shipping-addresses`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/user/shipping-addresses`
 
 **Purpose:** Shopping Agent retrieves user's saved shipping addresses
 
@@ -316,7 +348,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 ---
 
 ### 7. Add Shipping Address
-**Endpoint:** `POST https://api.soho.finance/v1/user/shipping-addresses`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/user/shipping-addresses`
 
 **Purpose:** User adds a new shipping address to their profile
 
@@ -385,7 +417,7 @@ Content-Type: application/json
 ---
 
 ### 8. Update Shipping Address
-**Endpoint:** `PUT https://api.soho.finance/v1/user/shipping-addresses/{address_id}`
+**Endpoint:** `PUT https://api.sohopay.xyz/v1/user/shipping-addresses/{address_id}`
 
 **Purpose:** Update an existing shipping address
 
@@ -434,7 +466,7 @@ Content-Type: application/json
 ---
 
 ### 9. Delete Shipping Address
-**Endpoint:** `DELETE https://api.soho.finance/v1/user/shipping-addresses/{address_id}`
+**Endpoint:** `DELETE https://api.sohopay.xyz/v1/user/shipping-addresses/{address_id}`
 
 **Purpose:** Delete a shipping address
 
@@ -464,7 +496,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 ---
 
 ### 10. Get User Credit Status
-**Endpoint:** `GET https://api.soho.finance/v1/user/credit-status`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/user/credit-status`
 
 **Purpose:** Shopping Agent checks user's available credit before purchase
 
@@ -519,7 +551,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 ---
 
 ### 11. Set Agent Spend Limit
-**Endpoint:** `POST https://api.soho.finance/v1/user/set-agent-limit`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/user/set-agent-limit`
 
 **Purpose:** Set or update the maximum amount an agent (admin) can spend on behalf of user per transaction
 
@@ -585,7 +617,7 @@ Content-Type: application/json
 ---
 
 ### 12. Get User Profile
-**Endpoint:** `GET https://api.soho.finance/v1/user/profile`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/user/profile`
 
 **Purpose:** Get complete user profile including contact info
 
@@ -620,7 +652,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 ## BNPL Credit Management
 
 ### 13. Request BNPL Quote
-**Endpoint:** `POST https://api.soho.finance/v1/credit/quote`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/credit/quote`
 
 **Purpose:** Get available BNPL payment plans for a purchase amount
 
@@ -654,7 +686,7 @@ Content-Type: application/json
     "value": "soho_token_0_user@example.com",
     "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
     "plan_id": "pay_in_4",
-    "provider_url": "https://api.soho.finance"
+    "provider_url": "https://api.sohopay.xyz"
   }
 }
 ```
@@ -806,7 +838,7 @@ Content-Type: application/json
 ## Credentials
 
 ### 14. Request Biometric Approval
-**Endpoint:** `POST https://api.soho.finance/v1/credentials/request-biometric-approval`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/credentials/request-biometric-approval`
 
 **Purpose:** Shopping Agent requests biometric approval BEFORE creating PaymentMandate. In AP2, biometric approval is always required for all transactions to ensure user authorization.
 
@@ -840,7 +872,7 @@ Content-Type: application/json
   "approval_method": "mobile_app",
   "message": "Push notification sent to user's SOHO mobile app",
   "expires_at": "2025-11-15T16:00:00Z",
-  "polling_url": "https://api.soho.finance/v1/credentials/approval-status?approval_id=approval_bio_xyz789"
+  "polling_url": "https://api.sohopay.xyz/v1/credentials/approval-status?approval_id=approval_bio_xyz789"
 }
 ```
 
@@ -848,7 +880,7 @@ Content-Type: application/json
 
 The Shopping Agent must poll the status endpoint to know when approval is complete:
 
-**Endpoint:** `GET https://api.soho.finance/v1/credentials/approval-status?approval_id={approval_id}`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/credentials/approval-status?approval_id={approval_id}`
 
 **Response While Pending (202 Accepted):**
 ```json
@@ -913,7 +945,7 @@ The Shopping Agent must poll the status endpoint to know when approval is comple
 ---
 
 ### 14a. Poll Biometric Approval Status
-**Endpoint:** `GET https://api.soho.finance/v1/credentials/approval-status?approval_id={approval_id}`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/credentials/approval-status?approval_id={approval_id}`
 
 **Purpose:** Shopping Agent polls to check if user has completed biometric approval. This endpoint is called repeatedly after requesting biometric approval (endpoint #14) until the user approves, rejects, or the request expires.
 
@@ -1006,7 +1038,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 ---
 
 ### 16. Create Payment Credential Token
-**Endpoint:** `POST https://api.soho.finance/v1/credentials/create-token`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/credentials/create-token`
 
 **Purpose:** Creates a payment credential token for the selected payment method. This token is used in the PaymentMandate and sent to the Merchant Payment Processor.
 
@@ -1032,7 +1064,7 @@ Content-Type: application/json
     "value": "soho_token_0_user@example.com",
     "borrower_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
     "plan_id": "pay_in_4",
-    "provider_url": "https://api.soho.finance"
+    "provider_url": "https://api.sohopay.xyz"
   }
 }
 ```
@@ -1056,7 +1088,7 @@ Content-Type: application/json
 ---
 
 ### 16. Verify Payment Credential Token
-**Endpoint:** `POST https://api.soho.finance/v1/credentials/verify-token`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/credentials/verify-token`
 
 **Purpose:** Payment Processor verifies the payment credential token received in PaymentMandate and associates it with payment_mandate_id.
 
@@ -1103,7 +1135,7 @@ Content-Type: application/json
 ---
 
 ### 15. Generate QR Code for Biometric Approval
-**Endpoint:** `GET https://api.soho.finance/v1/credentials/qr?approval_request_id={approval_request_id}`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/credentials/qr?approval_request_id={approval_request_id}`
 
 **Purpose:** Generate QR code for user to scan with mobile app for biometric approval. This is an alternative to push notification when the Shopping Agent needs biometric approval before creating PaymentMandate.
 
@@ -1123,7 +1155,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 ```json
 {
   "approval_request_id": "approval_req_xyz789",
-  "qr_code_url": "https://api.soho.finance/qr/credentials/approval_req_xyz789.png",
+  "qr_code_url": "https://api.sohopay.xyz/qr/credentials/approval_req_xyz789.png",
   "qr_code_data": "soho://credentials/approve/approval_req_xyz789",
   "expires_at": "2025-11-15T16:00:00Z"
 }
@@ -1149,7 +1181,7 @@ soho://credentials/approve/{approval_request_id}
 - **Merchant Payment Processor (SOHO)**: Receives PaymentMandate (which proves authorization), verifies token, executes on-chain
 
 ### 18. Execute Payment
-**Endpoint:** `POST https://api.soho.finance/v1/pay`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/pay`
 
 **Purpose:** Merchant Payment Processor (SOHO) processes payment for purchase. Returns immediate payment_hash if amount is within agent limit OR if biometric attestation is already present, or approval_id if user approval needed.
 
@@ -1247,7 +1279,7 @@ This two-step process ensures that even when auto-approving, the agent's spendin
   "approval_method": "mobile_app",
   "message": "Push notification sent to user's SOHO mobile app",
   "expires_at": "2025-11-15T16:00:00Z",
-  "polling_url": "https://api.soho.finance/v1/pay/status?approval_id=approval_soho_xyz789"
+  "polling_url": "https://api.sohopay.xyz/v1/pay/status?approval_id=approval_soho_xyz789"
 }
 ```
 
@@ -1265,7 +1297,7 @@ This two-step process ensures that even when auto-approving, the agent's spendin
 ---
 
 ### 18a. Poll Payment Approval Status
-**Endpoint:** `GET https://api.soho.finance/v1/pay/status?approval_id={approval_id}`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/pay/status?approval_id={approval_id}`
 
 **Purpose:** Merchant Payment Processor (SOHO) polls for user approval status (only needed when amount > agent limit and approval_id was returned from /v1/pay)
 
@@ -1364,7 +1396,7 @@ X-Merchant-API-Key: merchant_key_abc123
 ---
 
 ### 15. Process Payment (Merchant Payment Processor)
-**Endpoint:** `POST https://api.soho.finance/v1/process-payment`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/process-payment`
 
 **Purpose:** Merchant forwards PaymentMandate to SOHO for on-chain execution
 
@@ -1489,7 +1521,7 @@ Content-Type: application/json
 ---
 
 ### 16. Verify Payment Credential Token
-**Endpoint:** `POST https://api.soho.finance/v1/credentials/verify-token`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/credentials/verify-token`
 
 **Purpose:** Payment Processor verifies the payment credential token received in PaymentMandate and associates it with payment_mandate_id. Called by Merchant Payment Processor when processing payment.
 
@@ -1557,7 +1589,7 @@ Content-Type: application/json
 ---
 
 ### 19. Get Payment Receipt (Optional)
-**Endpoint:** `GET https://api.soho.finance/v1/pay/{payment_id}`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/pay/{payment_id}`
 
 **Purpose:** Retrieve payment details by payment ID.
 
@@ -1592,7 +1624,7 @@ X-Merchant-API-Key: merchant_key_abc123
 ## Payment Plans & History
 
 ### 20. Get User Payment Plans
-**Endpoint:** `GET https://api.soho.finance/v1/user/payment-plans`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/user/payment-plans`
 
 **Purpose:** Retrieve all active payment plans for user
 
@@ -1662,7 +1694,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 ---
 
 ### 21. Make Manual Payment
-**Endpoint:** `POST https://api.soho.finance/v1/payment-plans/{plan_instance_id}/pay`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/payment-plans/{plan_instance_id}/pay`
 
 **Purpose:** User makes early payment or extra payment on plan
 
@@ -1699,7 +1731,7 @@ Content-Type: application/json
 ---
 
 ### 22. Get Purchase History
-**Endpoint:** `GET https://api.soho.finance/v1/user/purchases`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/user/purchases`
 
 **Purpose:** Retrieve user's complete purchase history
 
@@ -1759,7 +1791,7 @@ Authorization: Bearer soho_agent_token_abc123def456
 ## Webhooks
 
 ### 23. Register Webhook
-**Endpoint:** `POST https://api.soho.finance/v1/webhooks/register`
+**Endpoint:** `POST https://api.sohopay.xyz/v1/webhooks/register`
 
 **Purpose:** Shopping Agent registers callback URL for events
 
@@ -1858,7 +1890,7 @@ Content-Type: application/json
 ## Merchant Integration
 
 ### 26. Verify Payment
-**Endpoint:** `GET https://api.soho.finance/v1/merchants/verify-payment`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/merchants/verify-payment`
 
 **Purpose:** Merchant verifies payment was executed on-chain
 
@@ -1892,7 +1924,7 @@ X-Merchant-API-Key: merchant_key_abc123
 ---
 
 ### 27. Get Settlement Info
-**Endpoint:** `GET https://api.soho.finance/v1/merchants/settlements`
+**Endpoint:** `GET https://api.sohopay.xyz/v1/merchants/settlements`
 
 **Purpose:** Merchant checks available balance and settlement options
 
