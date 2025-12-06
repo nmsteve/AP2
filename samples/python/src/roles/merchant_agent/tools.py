@@ -48,7 +48,8 @@ from common.payment_remote_a2a_client import PaymentRemoteA2aClient
 # This is the set of linked Merchant Payment Processor Agents this Merchant
 # is integrated with.
 _PAYMENT_PROCESSORS_BY_PAYMENT_METHOD_TYPE = {
-    "CARD": "http://localhost:8003/a2a/merchant_payment_processor_agent",
+    "CARD": "http://localhost:8003/a2a/merchant_agent/payment_processor",
+    "SOHO_CREDIT": "http://localhost:8003/a2a/merchant_agent/payment_processor",
 }
 
 # A placeholder for a JSON Web Token (JWT) used for merchant authorization.
@@ -211,18 +212,33 @@ async def initiate_payment(
 
   task = await payment_processor_agent.send_a2a_message(message_builder.build())
 
-  # Pass the payment receipt back to the shopping agent if it exists.
+  # Pass the payment receipt AND all transaction details back to the shopping agent
   payment_receipts = artifact_utils.find_canonical_objects(
       task.artifacts, PAYMENT_RECEIPT_DATA_KEY, PaymentReceipt
   )
   if payment_receipts:
     payment_receipt = artifact_utils.only(payment_receipts)
+
+    # Get all data parts including transaction details from credentials provider
+    all_data = artifact_utils.get_first_data_part(task.artifacts) or {}
+
+    # Combine payment receipt with transaction details
+    response_data = {PAYMENT_RECEIPT_DATA_KEY: payment_receipt.model_dump()}
+
+    # Add transaction details if present
+    if "transaction_hash" in all_data:
+      response_data["transaction_hash"] = all_data["transaction_hash"]
+    if "transaction_id" in all_data:
+      response_data["transaction_id"] = all_data["transaction_id"]
+    if "block_number" in all_data:
+      response_data["block_number"] = all_data["block_number"]
+    if "gas_used" in all_data:
+      response_data["gas_used"] = all_data["gas_used"]
+    if "amount_formatted" in all_data:
+      response_data["amount_formatted"] = all_data["amount_formatted"]
+
     await updater.add_artifact([
-        Part(
-            root=DataPart(
-                data={PAYMENT_RECEIPT_DATA_KEY: payment_receipt.model_dump()}
-            )
-        )
+        Part(root=DataPart(data=response_data))
     ])
 
   await updater.update_status(

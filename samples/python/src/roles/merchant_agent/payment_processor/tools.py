@@ -88,6 +88,14 @@ async def _handle_payment_mandate(
     current_task: The current task, or None if it's a new payment.
     debug_mode: Whether the agent is in debug mode.
   """
+  # Check if this is a SOHO Credit payment (already authenticated)
+  method_name = payment_mandate.payment_mandate_contents.payment_response.method_name
+  if method_name == "SOHO_CREDIT":
+    # SOHO Credit has biometric authentication, skip OTP challenge
+    await _complete_payment(payment_mandate, updater, debug_mode)
+    return
+
+  # For card payments, use OTP challenge flow
   if current_task is None:
     await _raise_challenge(updater)
     return
@@ -175,33 +183,46 @@ async def _complete_payment(
   payment_mandate_id = (
       payment_mandate.payment_mandate_contents.payment_mandate_id
   )
-  credentials_provider = _get_credentials_provider_client(payment_mandate)
-  payment_credential = await _request_payment_credential(
-      payment_mandate,
-      credentials_provider,
-      updater,
-      debug_mode,
+
+  # Extract payment credential from the mandate (already present in token.value)
+  payment_credential = (
+      payment_mandate.payment_mandate_contents.payment_response.details.get("token", {})
   )
+  if isinstance(payment_credential, dict):
+    payment_credential_value = payment_credential.get("value", "")
+  else:
+    payment_credential_value = str(payment_credential)
 
   logging.info(
       "Calling issuer to complete payment for %s with payment credential %s...",
       payment_mandate_id,
-      payment_credential,
+      payment_credential_value,
   )
+
+  # Get credentials provider for sending receipt
+  credentials_provider = _get_credentials_provider_client(payment_mandate)
   # Call issuer to complete the payment
   payment_receipt = _create_payment_receipt(payment_mandate)
-  await _send_payment_receipt_to_credentials_provider(
+  credentials_task = await _send_payment_receipt_to_credentials_provider(
       payment_receipt,
       credentials_provider,
       updater,
       debug_mode,
   )
+
+  # Extract transaction details from credentials provider response
+  credentials_data = artifact_utils.get_first_data_part(credentials_task.artifacts) or {}
+
+  # Add payment receipt and transaction details to artifacts
+  response_data = {PAYMENT_RECEIPT_DATA_KEY: payment_receipt.model_dump()}
+
+  # Include blockchain transaction details if present
+  for key in ["transaction_hash", "transaction_id", "block_number", "gas_used", "amount_formatted", "payment_result"]:
+    if key in credentials_data:
+      response_data[key] = credentials_data[key]
+
   await updater.add_artifact([
-      Part(
-          root=DataPart(
-              data={PAYMENT_RECEIPT_DATA_KEY: payment_receipt.model_dump()}
-          )
-      )
+      Part(root=DataPart(data=response_data))
   ])
   success_message = updater.new_agent_message(
       parts=_create_text_parts("{'status': 'success'}")
@@ -213,39 +234,6 @@ def _challenge_response_is_valid(challenge_response: str) -> bool:
   """Validates the challenge response."""
 
   return challenge_response == "123"
-
-
-async def _request_payment_credential(
-    payment_mandate: PaymentMandate,
-    credentials_provider: PaymentRemoteA2aClient,
-    updater: TaskUpdater,
-    debug_mode: bool = False,
-) -> str:
-  """Sends a request to the Credentials Provider for payment credentials.
-
-  Args:
-    payment_mandate: The PaymentMandate containing payment details.
-    credentials_provider: The credentials provider client.
-    updater: The task updater.
-    debug_mode: Whether the agent is in debug mode.
-
-  Returns:
-    payment_credential: The payment credential details.
-  """
-  message_builder = (
-      A2aMessageBuilder()
-      .set_context_id(updater.context_id)
-      .add_text("Give me the payment method credentials for the given token.")
-      .add_data(PAYMENT_MANDATE_DATA_KEY, payment_mandate.model_dump())
-      .add_data("debug_mode", debug_mode)
-  )
-  task = await credentials_provider.send_a2a_message(message_builder.build())
-
-  if not task.artifacts:
-    raise ValueError("Failed to find the payment method data.")
-  payment_credential = artifact_utils.get_first_data_part(task.artifacts)
-
-  return payment_credential
 
 
 def _create_payment_receipt(payment_mandate: PaymentMandate) -> PaymentReceipt:
@@ -291,7 +279,7 @@ def _get_credentials_provider_client(
           "token"
       )
   )
-  credentials_provider_url = token_object.get("url")
+  credentials_provider_url = token_object.get("provider_url")
   return PaymentRemoteA2aClient(
       name="credentials_provider",
       base_url=credentials_provider_url,
@@ -304,7 +292,7 @@ async def _send_payment_receipt_to_credentials_provider(
     credentials_provider: PaymentRemoteA2aClient,
     updater: TaskUpdater,
     debug_mode: bool = False,
-) -> None:
+):
   """Sends the payment receipt to the Credentials Provider.
 
   Args:
@@ -312,16 +300,19 @@ async def _send_payment_receipt_to_credentials_provider(
     credentials_provider: The credentials provider client.
     updater: The task updater.
     debug_mode: Whether the agent is in debug mode.
+
+  Returns:
+    The task response from the credentials provider containing transaction details.
   """
 
   message_builder = (
       A2aMessageBuilder()
       .set_context_id(updater.context_id)
-      .add_text("Here is the payment receipt. No action is required.")
+      .add_text("Here is the payment receipt. Pay with SOHO Credit.")
       .add_data(PAYMENT_RECEIPT_DATA_KEY, payment_receipt.model_dump())
       .add_data("debug_mode", debug_mode)
   )
-  await credentials_provider.send_a2a_message(message_builder.build())
+  return await credentials_provider.send_a2a_message(message_builder.build())
 
 
 def _create_text_parts(*texts: str) -> list[Part]:

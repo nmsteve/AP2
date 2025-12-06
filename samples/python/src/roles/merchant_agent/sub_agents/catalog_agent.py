@@ -17,6 +17,7 @@
 This agent fabricates catalog content based on the user's request.
 """
 
+import os
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -57,17 +58,25 @@ async def find_items_workflow(
       INTENT_MANDATE_DATA_KEY, data_parts, IntentMandate
   )
   intent = intent_mandate.natural_language_description
+
+  # Check for max_price constraint
+  max_price = message_utils.find_data_part("max_price", data_parts)
+  price_constraint = ""
+  if max_price:
+    price_constraint = f"\n\nIMPORTANT: All products MUST have a total price (amount.value) UNDER ${max_price}. Do not generate products with price >= ${max_price}."
+
   prompt = f"""
         Based on the user's request for '{intent}', your task is to generate 3
         complete, unique and realistic PaymentItem JSON objects.
 
-        You MUST exclude all branding from the PaymentItem `label` field.
+        You MUST exclude all branding from the PaymentItem `label` field.{price_constraint}
 
     %s
         """ % DEBUG_MODE_INSTRUCTIONS
 
+  model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
   llm_response = llm_client.models.generate_content(
-      model="gemini-2.5-flash",
+      model=model_name,
       contents=prompt,
       config={
           "response_mime_type": "application/json",
@@ -110,6 +119,13 @@ async def _create_and_add_cart_mandate_artifact(
               supported_methods="CARD",
               data={
                   "network": ["mastercard", "paypal", "amex"],
+              },
+          ),
+          PaymentMethodData(
+              supported_methods="SOHO_CREDIT",
+              data={
+                  "provider": "soho_credit",
+                  "supported_currencies": ["USD", "USDC"],
               },
           )
       ],

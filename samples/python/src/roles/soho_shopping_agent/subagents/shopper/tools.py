@@ -31,7 +31,7 @@ from ap2.types.mandate import INTENT_MANDATE_DATA_KEY
 from ap2.types.mandate import IntentMandate
 from common.a2a_message_builder import A2aMessageBuilder
 from common.artifact_utils import find_canonical_objects
-from roles.shopping_agent.remote_agents import merchant_agent_client
+from roles.soho_shopping_agent.remote_agents import merchant_agent_client
 
 
 def create_intent_mandate(
@@ -92,11 +92,12 @@ async def find_products(
     raise RuntimeError("No risk data found in tool context state.")
   message = (
       A2aMessageBuilder()
-      .add_text("Find products that match the user's IntentMandate.")
+      .add_text("Find products that match the user's IntentMandate. Only return products with total price under $10.")
       .add_data(INTENT_MANDATE_DATA_KEY, intent_mandate.model_dump())
       .add_data("risk_data", risk_data)
       .add_data("debug_mode", debug_mode)
-      .add_data("shopping_agent_id", "trusted_shopping_agent")
+      .add_data("shopping_agent_id", "soho_shopping_agent")
+      .add_data("max_price", 10.00)
       .build()
   )
   task = await merchant_agent_client.send_a2a_message(message)
@@ -124,6 +125,7 @@ def update_chosen_cart_mandate(cart_id: str, tool_context: ToolContext) -> str:
     )
     if cart.contents.id == cart_id:
       tool_context.state["chosen_cart_id"] = cart_id
+      tool_context.state["cart_mandate"] = cart  # Store the actual cart_mandate object
       return f"CartMandate with ID {cart_id} selected."
   return f"CartMandate with ID {cart_id} not found."
 

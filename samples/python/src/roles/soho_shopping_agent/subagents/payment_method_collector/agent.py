@@ -25,15 +25,17 @@ After selection, the agent gets a purchase token from the credentials
 provider, which is then sent to the merchant agent for payment.
 """
 
+import os
+
 from . import tools
 from common.retrying_llm_agent import RetryingLlmAgent
 from common.system_utils import DEBUG_MODE_INSTRUCTIONS
 
 
 payment_method_collector = RetryingLlmAgent(
-    model="gemini-2.5-flash",
+    model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp"),
     name="payment_method_collector",
-    max_retries=5,
+    max_retries=0,
     instruction="""
     You are an agent responsible for obtaining the user's payment method for a
     purchase.

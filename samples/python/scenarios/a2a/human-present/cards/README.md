@@ -86,7 +86,7 @@ Or you can run each server in its own terminal:
 3.  Start the Merchant Payment Processor Agent:
 
     ```sh
-    uv run --package ap2-samples python -m roles.merchant_payment_processor_agent
+    uv run --package ap2-samples python -m roles.merchant_agent.payment_processor
     ```
 
 4.  Start the Shopping Agent:

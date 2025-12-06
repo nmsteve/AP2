@@ -12,15 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A credentials provider."""
+"""SOHO Credentials Provider Agent.
+
+This agent manages SOHO Credit as the credentials provider, handling:
+- User credit limits and availability
+- Shipping addresses
+- BNPL (Buy Now Pay Later) payment plans
+- Biometric authentication and approval
+- OAuth token management
+"""
 
 from collections.abc import Sequence
 
 from absl import app
-from roles.credentials_provider_agent.agent_executor import CredentialsProviderExecutor
+from roles.soho_credentials_provider.agent_executor import SohoCredentialsProviderExecutor
 from common import server
 
-AGENT_PORT = 8002
+AGENT_PORT = 8005
 
 
 def main(argv: Sequence[str]) -> None:
@@ -28,8 +36,8 @@ def main(argv: Sequence[str]) -> None:
   server.run_agent_blocking(
       port=AGENT_PORT,
       agent_card=agent_card,
-      executor=CredentialsProviderExecutor(agent_card.capabilities.extensions),
-      rpc_url="/a2a/credentials_provider",
+      executor=SohoCredentialsProviderExecutor(agent_card.capabilities.extensions),
+      rpc_url="/a2a/soho_credentials_provider",
   )
 
 

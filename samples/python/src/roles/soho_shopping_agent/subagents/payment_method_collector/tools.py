@@ -23,7 +23,7 @@ from google.adk.tools.tool_context import ToolContext
 from ap2.types.payment_request import PAYMENT_METHOD_DATA_DATA_KEY
 from common.a2a_message_builder import A2aMessageBuilder
 from common import artifact_utils
-from roles.shopping_agent.remote_agents import credentials_provider_client
+from roles.soho_shopping_agent.remote_agents import soho_credentials_provider_client as credentials_provider_client
 
 
 async def get_payment_methods(

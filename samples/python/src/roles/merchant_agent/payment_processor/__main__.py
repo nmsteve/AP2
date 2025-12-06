@@ -18,7 +18,7 @@ from collections.abc import Sequence
 
 from absl import app
 
-from roles.merchant_payment_processor_agent.agent_executor import PaymentProcessorExecutor
+from roles.merchant_agent.payment_processor.agent_executor import PaymentProcessorExecutor
 from common import server
 
 AGENT_PAYMENT_PROCESSOR_PORT = 8003
@@ -29,7 +29,7 @@ def main(argv: Sequence[str]) -> None:
       port=AGENT_PAYMENT_PROCESSOR_PORT,
       agent_card=agent_card,
       executor=PaymentProcessorExecutor(agent_card.capabilities.extensions),
-      rpc_url="/a2a/merchant_payment_processor_agent",
+      rpc_url="/a2a/merchant_agent/payment_processor",
   )
 
 if __name__ == "__main__":

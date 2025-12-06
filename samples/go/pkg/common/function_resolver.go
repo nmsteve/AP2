@@ -56,7 +56,7 @@ func NewFunctionResolver(tools []ToolInfo, instructions string) (*FunctionResolv
 		return nil, fmt.Errorf("failed to create genai client: %w", err)
 	}
 
-	model := client.GenerativeModel("gemini-2.5-flash")
+	model := client.GenerativeModel("gemini-2.5-pro")
 	model.SystemInstruction = &genai.Content{
 		Parts: []genai.Part{genai.Text(instructions)},
 	}

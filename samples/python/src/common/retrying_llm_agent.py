@@ -34,28 +34,20 @@ class RetryingLlmAgent(LlmAgent):
   async def _retry_async(
       self, ctx: InvocationContext, retries_left: int = 0
   ) -> AsyncGenerator[Event, None]:
-    if retries_left <= 0:
+    try:
+      async for event in super()._run_async_impl(ctx):
+        yield event
+    except Exception as e:  # pylint: disable=broad-exception-caught
+      error_details = str(e)
       yield Event(
           author=ctx.agent.name,
           invocation_id=ctx.invocation_id,
           error_message=(
-              "Maximum retries exhausted. The remote Gemini server failed to"
-              " respond. Please try again later."
+              f"An error occurred: {error_details}\n\n"
+              "Would you like to retry? Please type 'yes' to retry or 'no' to cancel."
           ),
+          custom_metadata={"error": error_details},
       )
-    else:
-      try:
-        async for event in super()._run_async_impl(ctx):
-          yield event
-      except Exception as e:  # pylint: disable=broad-exception-caught
-        yield Event(
-            author=ctx.agent.name,
-            invocation_id=ctx.invocation_id,
-            error_message="Gemini server error. Retrying...",
-            custom_metadata={"error": str(e)},
-        )
-        async for event in self._retry_async(ctx, retries_left - 1):
-          yield event
 
   @override
   async def _run_async_impl(

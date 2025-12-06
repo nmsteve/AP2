@@ -12,6 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""The shopping agent module."""
-
-from . import agent
+"""SOHO Credentials Provider package."""

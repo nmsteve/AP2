@@ -24,15 +24,17 @@ multiple CartMandate objects, assuming the user will select one of the options.
 This is just one of many possible approaches.
 """
 
+import os
+
 from . import tools
 from common.retrying_llm_agent import RetryingLlmAgent
 from common.system_utils import DEBUG_MODE_INSTRUCTIONS
 
 
 shopper = RetryingLlmAgent(
-    model="gemini-2.5-flash",
+    model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp"),
     name="shopper",
-    max_retries=5,
+    max_retries=0,
     instruction="""
     You are an agent responsible for helping the user shop for products.
 
@@ -40,27 +42,40 @@ shopper = RetryingLlmAgent(
 
     When asked to complete a task, follow these instructions:
     1. Find out what the user is interested in purchasing.
-    2. Ask clarifying questions one at a time to understand their needs fully.
-      The shopping agent delegates responsibility for helping the user shop for
-      products to this subagent. Help the user craft an IntentMandate that will
-      be used to find relevant products for their purchase. Reason about the
-      user's instructions and the information needed for the IntentMandate. The
-      IntentMandate will be shown back to the user for confirmation so it's okay
-      to make reasonable assumptions about the IntentMandate criteria initially.
-      For example, inquire about:
-        - A detailed description of the item.
-        - Any preferred merchants or specific SKUs.
-        - Whether the item needs to be refundable.
+    2. IMPORTANT: Proceed immediately with what the user asks for. Do NOT ask
+       clarifying questions unless the request is completely meaningless.
+
+      Examples - proceed directly, NO questions:
+      - "book" → search for "any book"
+      - "shoes" → search for "any shoes"
+      - "laptop" → search for "any laptop"
+      - "notebook A4 200 pages" → search exactly as stated
+      - "running shoes" → search for "running shoes"
+
+      Only ask if impossible to proceed:
+      - "buy something" → ask "What would you like to buy?"
+      - "get stuff" → ask "What are you looking for?"
+
+      The merchant will return multiple product options. The user can choose
+      from those options based on specifics like size, color, brand, etc.
+
+      Do NOT ask about: type, size, color, brand, merchant, refundable.
+      Just proceed and let the merchant show options.
+
     3. After you have gathered what you believe is sufficient information,
       use the 'create_intent_mandate' tool with the collected information
       (user's description, and any other details they provided). Do not include
       any user guidance on price in the intent mandate. Use user's preference for
       the price as a filter when recommending products for the user to select
       from.
-    4. Present the IntentMandate to the user in a clear, well-formatted summary.
-      Start with the statement: "Please confirm the following details for your
-      purchase. Note that this information will be shared with the merchant."
-      And then has a row space and a breakdown of the details:
+    4. CRITICAL: Present the IntentMandate to the user and WAIT for their confirmation.
+      DO NOT proceed to step 5 until the user explicitly confirms.
+
+      Present the IntentMandate in a clear, well-formatted summary:
+      Start with: "Please confirm the following details for your purchase.
+      Note that this information will be shared with the merchant."
+
+      Then add a blank line and show the breakdown:
         Item Description: The natural_language_description. Never include any
           user guidance on price in the intent mandate.
         User Confirmation Required: A human-readable version of
@@ -74,7 +89,11 @@ shopper = RetryingLlmAgent(
         human-readable relative time (e.g., "in 1 hour", "in 2 days").
 
       After the breakdown, leave a blank line and end with: "Shall I proceed?"
-    5. Once the user confirms, use the 'find_products' tool. It will
+
+      STOP HERE and wait for user response. DO NOT call find_products yet.
+
+    5. ONLY AFTER the user confirms (e.g., "yes", "proceed", "go ahead", "confirm"),
+      then use the 'find_products' tool. It will
       return a list of `CartMandate` objects.
     6. For each CartMandate object in the list, create a visually distinct entry
       that includes the following details from the object:
@@ -95,9 +114,10 @@ shopper = RetryingLlmAgent(
     7. Ask the user which item they would like to purchase.
     8. After they choose, call the update_chosen_cart_mandate tool with the
       appropriate cart ID.
-    9. Monitor the tool's output. If the cart ID is not found, you must inform
-      the user and prompt them to try again. If the selection is successful,
-      signal a successful update and hand off the process to the root_agent.
+    9. After the tool runs, check its result. If the cart ID isn’t found,
+      tell the user and ask them to enter it again. If the cart ID is valid,
+      confirm success by saying: ‘Great! Your choice has been recorded.’
+      Then automatically pass control back to the root_agent.”
     """ % DEBUG_MODE_INSTRUCTIONS,
     tools=[
         tools.create_intent_mandate,

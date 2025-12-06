@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# A script to automate the execution of the card_payment example.
+# A script to automate the execution of the SOHO Credit shopping example.
 # It starts all necessary servers and agents in the background,
-# and then runs the client.
+# and then runs the SOHO shopping client.
 
 # Exit immediately if any command exits with a non-zero status.
 set -e
@@ -108,16 +108,16 @@ echo "-> Starting the Merchant Agent (port:8001 log:$LOG_DIR/merchant_agent.log)
 $UV_RUN_CMD --package ap2-samples python -m roles.merchant_agent >"$LOG_DIR/merchant_agent.log" 2>&1 &
 pids+=($!)
 
-echo "-> Starting the Credentials Provider (port:8002 log:$LOG_DIR/credentials_provider_agent.log)..."
-$UV_RUN_CMD --package ap2-samples python -m roles.credentials_provider_agent >"$LOG_DIR/credentials_provider_agent.log" 2>&1 &
+echo "-> Starting the SOHO Credentials Provider (port:8005 log:$LOG_DIR/soho_credentials_provider.log)..."
+$UV_RUN_CMD --package ap2-samples python -m roles.soho_credentials_provider >"$LOG_DIR/soho_credentials_provider.log" 2>&1 &
 pids+=($!)
 
-echo "-> Starting the Card Processor Agent (port:8003 log:$LOG_DIR/mpp_agent.log)..."
-$UV_RUN_CMD --package ap2-samples python -m roles.merchant_agent.payment_processor >"$LOG_DIR/mpp_agent.log" 2>&1 &
+echo "-> Starting the Payment Processor (port:8003 log:$LOG_DIR/payment_processor.log)..."
+$UV_RUN_CMD --package ap2-samples python -m roles.merchant_agent.payment_processor >"$LOG_DIR/payment_processor.log" 2>&1 &
 pids+=($!)
 
 echo ""
 echo "All remote servers are starting."
 
-echo "Starting the Shopping Agent..."
+echo "Starting the SOHO Shopping Agent..."
 $UV_RUN_CMD --package ap2-samples adk web --host 0.0.0.0 $AGENTS_DIR

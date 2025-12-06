@@ -25,27 +25,66 @@ from ap2.types.contact_picker import CONTACT_ADDRESS_DATA_KEY
 from ap2.types.contact_picker import ContactAddress
 from common import artifact_utils
 from common.a2a_message_builder import A2aMessageBuilder
-from roles.shopping_agent.remote_agents import credentials_provider_client
+from roles.soho_shopping_agent.remote_agents import soho_credentials_provider_client as credentials_provider_client
 
 
-async def get_shipping_address(
+async def get_shipping_addresses(
     user_email: str,
     tool_context: ToolContext,
-) -> ContactAddress:
-  """Gets the user's shipping address from the credentials provider.
+) -> dict:
+  """Gets all available shipping addresses from the credentials provider.
 
   Args:
-    user_email: The ID of the user to get the shipping address for.
+    user_email: The ID of the user to get the shipping addresses for.
     tool_context: The ADK supplied tool context.
 
   Returns:
-    The user's shipping address.
+    A dictionary with shipping addresses keyed by location (home, upcountry, office).
   """
   message = (
       A2aMessageBuilder()
       .set_context_id(tool_context.state["shopping_context_id"])
-      .add_text("Get the user's shipping address.")
+      .add_text("Get all of the user's shipping addresses.")
       .add_data("user_email", user_email)
+      .build()
+  )
+  task = await credentials_provider_client.send_a2a_message(message)
+  addresses = _parse_addresses(task.artifacts)
+  # Return all addresses as a dictionary
+  result = {}
+  for addr in addresses:
+    # Assume the tool returns addresses with a 'label' or 'id' field
+    if hasattr(addr, 'label'):
+      key = addr.label.lower()
+    elif hasattr(addr, 'organization'):
+      key = 'office'
+    else:
+      key = 'home'
+    result[key] = addr
+  return result
+
+
+async def select_shipping_address(
+    user_email: str,
+    address_key: str,
+    tool_context: ToolContext,
+) -> ContactAddress:
+  """Selects a specific shipping address for the user.
+
+  Args:
+    user_email: The ID of the user.
+    address_key: The key of the address to select (home, upcountry, office).
+    tool_context: The ADK supplied tool context.
+
+  Returns:
+    The selected shipping address.
+  """
+  message = (
+      A2aMessageBuilder()
+      .set_context_id(tool_context.state["shopping_context_id"])
+      .add_text(f"Get the user's {address_key} shipping address.")
+      .add_data("user_email", user_email)
+      .add_data("address_key", address_key)
       .build()
   )
   task = await credentials_provider_client.send_a2a_message(message)
